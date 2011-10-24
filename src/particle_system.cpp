@@ -20,6 +20,8 @@ ParticleSystem::~ParticleSystem(){
     this->_freeCudaArray(this->_cudaGridIndex);
     this->_freeCudaArray(this->_cudaCellStart);
     this->_freeCudaArray(this->_cudaCellEnd);
+    this->_freeCudaArray(this->_cudaSortedPositions);
+    this->_freeCudaArray(this->_cudaSortedVelocities);
 
     this->_unmapGLBufferObject(this->_cudaPositionsVBOResource);
     this->_deleteVBO(&this->_positionsVBO);
@@ -41,8 +43,9 @@ void ParticleSystem::setRadius(float radius) {
     this->_paramters.particleRadius = radius;
 }
 
-void ParticleSystem::setGravity(float gravity) {
-    this->_paramters.gravity = make_float3(0.0f, gravity, 0.0f);
+void ParticleSystem::setGravity(float3 gravity) {
+    this->_paramters.gravity = gravity;
+    setParameters(&this->_paramters);
 }
 
 void ParticleSystem::update(float deltaTime) {
@@ -66,6 +69,30 @@ void ParticleSystem::update(float deltaTime) {
 
     // sort particles based on hash
     sortParticles(this->_cudaGridHash, this->_cudaGridIndex, this->_count);
+
+    reorderDataAndFindCellStart(
+        this->_cudaCellStart,
+        this->_cudaCellEnd,
+        this->_cudaSortedPositions,
+        this->_cudaSortedVelocities,
+        this->_cudaGridHash,
+        this->_cudaGridIndex,
+        dPos,
+        this->_cudaVelocities,
+        this->_count,
+        this->_gridCells
+    );
+
+    collide(
+        this->_cudaVelocities,
+        this->_cudaSortedPositions,
+        this->_cudaSortedVelocities,
+        this->_cudaGridIndex,
+        this->_cudaCellStart,
+        this->_cudaCellEnd,
+        this->_count,
+        this->_gridCells
+    );
 
     this->_unmapGLBufferObject(this->_cudaPositionsVBOResource);
     cutilSafeCall(cutilDeviceSynchronize());
@@ -96,8 +123,29 @@ struct cudaGraphicsResource* ParticleSystem::getCudaPositionsVBOResource() const
 }
 
 void ParticleSystem::_initialize() {
+    this->_paramters.particleRadius = 1.0f/64.0f;
+    float cellSize = this->_paramters.particleRadius * 2;
+    uint3 gridSize;
+    gridSize.x = gridSize.y = gridSize.z = 256;
+
+    this->_paramters.attraction = 0.0f;
+    this->_paramters.spring = 0.5f;
+    this->_paramters.damping = 0.02f;
+    this->_paramters.shear = 0.1f;
+
+    this->_paramters.boundaryDamping = 0.9f;
+    this->_paramters.globalDamping = 0.00f;
+    this->_paramters.gravity = make_float3(0.0f, -0.05f, 0.0f);
+    this->_paramters.gridOrigin = make_float3(-1.0f, -1.0f, -1.0f);
+    this->_paramters.cellSize = make_float3(cellSize, cellSize, cellSize);
+    this->_paramters.gridSize = gridSize;
+    this->_gridCells = gridSize.x * gridSize.y * gridSize.z;
+
+    setParameters(&this->_paramters);
+
     unsigned int memSizeF = sizeof(float) * 4 * this->_count;
     unsigned int memSizeI = sizeof(uint) * 4 * this->_count;
+    unsigned int memSizeCells = sizeof(uint) * this->_gridCells;
 
     // allocate host storage
     this->_hPositions = new float[this->_count*4];
@@ -116,24 +164,15 @@ void ParticleSystem::_initialize() {
 
     this->_allocateCudaArray((void **)&this->_cudaColorsVBO, memSizeF);
     this->_allocateCudaArray((void**)&this->_cudaVelocities, memSizeF);
+    this->_allocateCudaArray((void**)&this->_cudaSortedPositions, memSizeF);
+    this->_allocateCudaArray((void**)&this->_cudaSortedVelocities, memSizeF);
 
     this->_allocateCudaArray((void**)&this->_cudaGridHash, memSizeI);
     this->_allocateCudaArray((void**)&this->_cudaGridIndex, memSizeI);
-    this->_allocateCudaArray((void**)&this->_cudaCellStart, memSizeI);
-    this->_allocateCudaArray((void**)&this->_cudaCellEnd, memSizeI);
 
-    this->_paramters.particleRadius = 1.0f/64.0f;
-    this->_paramters.boundaryDamping = -0.5f;
-    this->_paramters.globalDamping = -1.0f;
-    this->_paramters.gravity = make_float3(0.0f, -0.05f, 0.0f);
-    this->_paramters.gridOrigin = make_float3(-1.0f, -1.0f, -1.0f);
-    float cellSize = this->_paramters.particleRadius * 2;
-    this->_paramters.cellSize = make_float3(cellSize, cellSize, cellSize);
-    uint3 gridSize;
-    gridSize.x = gridSize.y = gridSize.z = 8;
-    this->_paramters.gridSize = gridSize;
+    this->_allocateCudaArray((void**)&this->_cudaCellStart, memSizeCells);
+    this->_allocateCudaArray((void**)&this->_cudaCellEnd, memSizeCells);
 
-    setParameters(&this->_paramters);
 }
 
 void ParticleSystem::_allocateCudaArray(void **pointer, size_t size) {

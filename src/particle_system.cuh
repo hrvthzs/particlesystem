@@ -41,5 +41,16 @@ extern "C"
         uint   cells
     );
 
+    void collide(
+        float* newVelocities,
+        float* sortedPositions,
+        float* sortedVelocities,
+        uint*  gridIndex,
+        uint*  cellStart,
+        uint*  cellEnd,
+        uint   count,
+        uint   cells
+    );
+
     void setParameters(ParticleSystemParameters *particleSystemParameters);
 }

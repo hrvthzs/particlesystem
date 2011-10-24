@@ -35,6 +35,9 @@
 #include <cutil_inline.h>    // includes cuda.h and cuda_runtime_api.h
 #include <cutil_gl_inline.h> // includes cuda_gl_interop.h// includes cuda_gl_interop.h
 #include <cutil_gl_error.h>
+#include <cutil_gl_error.h>
+#include "particle_system.cuh"
+#include "cutil_math.h"
 // #include <rendercheck_gl.h>
 // #include <vector_types.h>
 
@@ -56,8 +59,8 @@ using namespace std;
 
 ////////////////////////////////////////////////////////////////////////////////
 // constants
-const unsigned int mesh_width = 256;
-const unsigned int mesh_height = 256;
+const unsigned int mesh_width = 128;
+const unsigned int mesh_height = 128;
 
 float g_fAnim = 0.0;
 bool render = false;
@@ -98,7 +101,7 @@ const unsigned short point[1][3] =
 ////////////////////////////////////////////////////////////////////////////////
 
 GLuint dataVBO, dataEBO;
-
+int renderCount = 0;
 int width, height;// Window size
 float rx = 0.0f, ry = 0.0f, pz = -2.0f;
 
@@ -178,8 +181,34 @@ void onInit()
 void onWindowRedraw()
 {
     //runCuda(&cuda_vbo_resource);
-    if (render)
-        pSystem->update(0.02f);
+    cudaEvent_t start,stop;
+    // Generate events
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
+
+    // Trigger event 'start'
+    cudaEventRecord(start, 0);
+
+    if (render) {
+        pSystem->update(0.05f);
+    }
+
+    /* CUDA Host / Device / Kernel Code ... */
+
+    cudaEventRecord(stop, 0); // Trigger Stop event
+    cudaEventSynchronize(stop); // Sync events (BLOCKS till last (stop in this case) has been recorded!)
+    float elapsedTime; // Initialize elapsedTime;
+    cudaEventElapsedTime(&elapsedTime, start, stop); // Calculate runtime, write to elapsedTime -- cudaEventElapsedTime returns value in milliseconds. Resolution ~0.5ms
+
+    if (renderCount == 100) {
+        cout << "FPS: " << 1000.0 / elapsedTime << endl;
+        renderCount = 0;
+    }
+    renderCount++;
+
+    // Destroy CUDA Event API Events
+    cudaEventDestroy(start);
+    cudaEventDestroy(stop);
     // run CUDA kernel to generate vertex positions
 
 
@@ -206,6 +235,22 @@ void onWindowRedraw()
             );
 
     glm::mat4 mvp = projection*mv;
+
+    /*glm::mat4 gmv = glm::rotate(
+        glm::rotate(
+            glm::mat4(1.0f),
+            ry, glm::vec3(1, 0, 0)
+        ),
+        rx, glm::vec3(0, 1, 0)
+    );
+
+    glm::vec4 v(0.0f, -0.05f, 0.0f, 0.0f);
+    v = gmv * v;
+    //v = v / 20.0f;
+    cout << v.x << ", " << v.y << ", " << v.z << endl;
+
+    float3 gravity = make_float3(v.x, v.y, v.z);
+    pSystem->setGravity(gravity);*/
 
     shaderProgram->use();
 

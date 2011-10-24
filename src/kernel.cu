@@ -19,7 +19,7 @@ __global__ void kernel(float4* pos, unsigned int width, unsigned int height, flo
     float w = sinf(u*freq + time) * cosf(v*freq + time) * 0.5f;
 
     // write output vertex
-    pos[y*width+x] = make_float4(u, w, v, 1.0f);
+    pos[y*width+x] = make_float4(u, v, w, 1.0f);
 }
 
 // Wrapper for the __global__ call that sets up the kernel call

@@ -123,7 +123,7 @@ GLuint ShaderProgram::link (size_t count, ...) {
         glAttachShader(program, shader);
         glDeleteShader(shader);
     }
-    
+
     va_end(args);
 
     // Link program and check for errors

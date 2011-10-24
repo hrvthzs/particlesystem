@@ -19,6 +19,10 @@
 typedef unsigned int uint;
 
 struct ParticleSystemParameters {
+    float attraction;
+    float spring;
+    float shear;
+    float damping;
     float particleRadius;
     float boundaryDamping;
     float globalDamping;
@@ -38,7 +42,7 @@ public:
     float getGravity() const;
 
     void setRadius(float r);
-    void setGravity(float g);
+    void setGravity(float3 g);
 
     void update(float deltaTime);
 
@@ -55,6 +59,7 @@ protected:
 
     uint _count;
     uint3 _gridSize;
+    uint _gridCells;
 
     float* _hPositions;
     float* _hVelocities;
@@ -67,8 +72,8 @@ protected:
     uint* _cudaCellStart;
     uint* _cudaCellEnd;
 
-    float* _hSortedPositions;
-    float* _hSortedVelocities;
+    float* _cudaSortedPositions;
+    float* _cudaSortedVelocities;
 
     float* _cudaPositionsVBO;        // these are the CUDA deviceMem Pos
     float* _cudaColorsVBO;      // these are the CUDA deviceMem Color
