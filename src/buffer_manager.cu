@@ -1,3 +1,6 @@
+#ifndef __BUFFER_MANAGER_CU__
+#define __BUFFER_MANAGER_CU__
+
 #include "buffer_manager.cuh"
 
 namespace Buffer {
@@ -100,3 +103,5 @@ namespace Buffer {
     ///////////////////////////////////////////////////////////////////////////
 
 }
+
+#endif // __BUFFER_MANAGER_CU__

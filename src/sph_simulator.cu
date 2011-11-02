@@ -3,10 +3,12 @@
 
 #include "sph_simulator.cuh"
 #include "sph_integrator.cu"
+
+// !!! template classes must be included definition too
 #include "buffer_buffer.cu"
 #include "buffer_manager.cu"
 
-#include <iostream>
+
 namespace SPH {
 
     /**
@@ -14,10 +16,15 @@ namespace SPH {
      */
     Simulator::Simulator () {
         Buffer::Allocator *allocator = new Buffer::Allocator();
-        Buffer::Buffer<float> *buffer = new Buffer::Buffer<float>(allocator, Buffer::host);
-        std::cout << buffer->getSize() << std::endl;
+        //Buffer::Buffer<float> *buffer = new Buffer::Buffer<float>(allocator, Buffer::host);
 
-        Buffer::Manager<int> *manager = new Buffer::Manager<int>();
+
+        this->_bufferManager = new Buffer::Manager<sph_buffer_t>();
+
+    }
+
+    Simulator::~Simulator() {
+        delete this->_bufferManager;
     }
 
     /**

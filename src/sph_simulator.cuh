@@ -2,6 +2,8 @@
 #define __SPH_SIMULATOR_CUH__
 
 #include "cutil_math.h"
+#include "sph.h"
+#include "buffer_manager.cuh"
 
 namespace SPH {
 
@@ -31,12 +33,14 @@ namespace SPH {
 
         public:
             Simulator();
+            ~Simulator();
             void integrate (int numParticles, float deltaTime, float *pos);
 
         protected:
             uint _iDivUp(uint a, uint b);
             void _computeGridSize(uint n, uint blockSize, uint &numBlocks, uint &numThreads);
 
+            Buffer::Manager<sph_buffer_t> *_bufferManager;
     };
 
 };

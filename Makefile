@@ -37,6 +37,7 @@
 EXECUTABLE	:= particleSystem
 # CUDA source files (compiled with cudacc)
 CUFILES		:= \
+	main.cu \
 	src/kernel.cu \
 	src/particle_system.cu \
 	src/buffer_buffer.cu \
@@ -52,7 +53,6 @@ CU_DEPS		:= \
 
 # C/C++ source files (compiled with gcc / c++)
 CCFILES		:= \
-	src/main.cpp \
 	src/shader_program.cpp \
 	src/particle_system.cpp \
 	src/buffer.cpp \

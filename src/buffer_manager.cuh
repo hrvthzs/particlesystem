@@ -1,5 +1,5 @@
-#ifndef __BUFFER_MANAGER_H__
-#define __BUFFER_MANAGER_H__
+#ifndef __BUFFER_MANAGER_CUH__
+#define __BUFFER_MANAGER_CUH__
 
 #include "buffer_buffer.cuh"
 
@@ -15,6 +15,9 @@ namespace Buffer {
      * Most important is when an instance of Manager class is
      * deleted from memory, it's destructor will free and delete all
      * containing buffers too.
+     *
+     * !!! Important !!!
+     * Template classes must be included definition too
      */
     template <class T> class Manager {
 
@@ -88,4 +91,4 @@ namespace Buffer {
 
 };
 
-#endif // __BUFFER_MANAGER_H__
+#endif // __BUFFER_MANAGER_CUH__

@@ -1,7 +1,6 @@
 #include "particle_system.h"
 #include "particle_system.cuh"
 #include "cutil_math.h"
-#include "sph_simulator.cuh"
 
 ParticleSystem::ParticleSystem(uint count, uint3 gridSize) {
     this->_count = count;
@@ -56,9 +55,9 @@ void ParticleSystem::update(float deltaTime) {
     dPos = (float *) this->_mapGLBufferObject(&this->_cudaPositionsVBOResource);
 
 
-    SPH::Simulator *simulator = new SPH::Simulator();
+    //SPH::Simulator *simulator = new SPH::Simulator();
 
-    simulator->integrate(this->_count, deltaTime, dPos);
+    //simulator->integrate(this->_count, deltaTime, dPos);
 
     /*integrateSystem(
         dPos,

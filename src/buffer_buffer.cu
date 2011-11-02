@@ -1,3 +1,6 @@
+#ifndef __BUFFER_BUFFER_CU__
+#define __BUFFER_BUFFER_CU__
+
 #include "buffer_buffer.cuh"
 
 #include <iostream>
@@ -141,3 +144,5 @@ namespace Buffer {
 
     ///////////////////////////////////////////////////////////////////////////
 }
+
+#endif // __BUFFER_BUFFER_ĆU__

@@ -1,5 +1,5 @@
-#ifndef __BUFFER_BUFFER_H__
-#define __BUFFER_BUFFER_H__
+#ifndef __BUFFER_BUFFER_CUH__
+#define __BUFFER_BUFFER_CUH__
 
 #include "buffer.h"
 #include "buffer_allocator.h"
@@ -11,6 +11,9 @@ namespace Buffer {
 
     /**
      * Memory Buffer
+     *
+     * !!! Important !!!
+     * Template classes must be included definition too
      */
     template <class T> class Buffer {
 
@@ -98,4 +101,4 @@ namespace Buffer {
     };
 };
 
-#endif // __BUFFER_BUFFER_H__
+#endif // __BUFFER_BUFFER_CUH__
