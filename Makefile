@@ -36,15 +36,28 @@
 # Add source files here
 EXECUTABLE	:= particleSystem
 # CUDA source files (compiled with cudacc)
-CUFILES		:= src/kernel.cu src/particle_system.cu
+CUFILES		:= \
+	src/kernel.cu \
+	src/particle_system.cu \
+	src/buffer_buffer.cu \
+	src/buffer_manager.cu \
+	src/sph_simulator.cu \
+
 # CUDA dependency files
 CU_DEPS		:= \
+	src/sph_integrator.cu \
+	src/sph_kernels_poly6.cu \
+	src/sph_kernels.cu \
+
 
 # C/C++ source files (compiled with gcc / c++)
 CCFILES		:= \
 	src/main.cpp \
 	src/shader_program.cpp \
-	src/particle_system.cpp
+	src/particle_system.cpp \
+	src/buffer.cpp \
+	src/buffer_allocator.cpp \
+
 
 # Additional compiler flags and LIBs to include
 USEGLLIB             := 1
@@ -57,7 +70,7 @@ OMIT_CUTIL_LIB       := 1
 
 ################################################################################
 # Rules and targets
-	
+
 SRCDIR := src/
 ROOTDIR := ..
 

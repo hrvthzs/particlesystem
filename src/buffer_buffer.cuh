@@ -26,7 +26,7 @@ namespace Buffer {
             /**
              * Destructor
              */
-            ~Buffer();
+            virtual ~Buffer();
 
             /**
              * Bind buffer to texture
@@ -43,7 +43,7 @@ namespace Buffer {
              * Initialize memory with specified value
              * @param value init value
              */
-            void memset(T value);
+            error_t memset(int value);
 
             /**
              * Allocate memory for required number of elements

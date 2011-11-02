@@ -4,14 +4,20 @@
 
 namespace Buffer {
 
+    ///////////////////////////////////////////////////////////////////////////
+
     Allocator::Allocator() {
         this->_hAllocatedMemory = 0;
         this->_dAllocatedMemory = 0;
     }
 
+    ///////////////////////////////////////////////////////////////////////////
+
     Allocator::~Allocator() {
 
     }
+
+    ///////////////////////////////////////////////////////////////////////////
 
     error_t Allocator::allocate(void** ptr, size_t size, memory_t memory) {
         error_t error;
@@ -31,8 +37,11 @@ namespace Buffer {
         return error;
     }
 
+    ///////////////////////////////////////////////////////////////////////////
+
     error_t Allocator::free(void **ptr, memory_t memory) {
         error_t error;
+
         switch (memory) {
             case host:
                 error = this->_freeHost(ptr);
@@ -46,6 +55,8 @@ namespace Buffer {
 
         return error;
     }
+
+    ///////////////////////////////////////////////////////////////////////////
 
     error_t Allocator::_allocateHost(void **ptr, size_t size) {
         error_t error;
@@ -63,6 +74,8 @@ namespace Buffer {
         return error;
     }
 
+    ///////////////////////////////////////////////////////////////////////////
+
     error_t Allocator::_allocateDevice(void **ptr, size_t size) {
         error_t error;
 
@@ -78,6 +91,8 @@ namespace Buffer {
 
         return error;
     }
+
+    ///////////////////////////////////////////////////////////////////////////
 
     error_t Allocator::_freeHost (void **ptr) {
         error_t error;
@@ -96,24 +111,14 @@ namespace Buffer {
         return error;
     }
 
+    ///////////////////////////////////////////////////////////////////////////
+
     error_t Allocator::_freeDevice (void **ptr) {
         error_t error;
 
         cudaError_t cudaError = cudaFree(*ptr);
 
-        switch (cudaError) {
-            case cudaSuccess:
-                error = success;
-                break;
-            case cudaErrorInitializationError:
-                error = initializationError;
-                break;
-            case cudaErrorInvalidDevicePointer:
-                error = invalidPointerError;
-                break;
-            default:
-                error = unknownError;
-        }
+        error = parseCudaError(cudaError);
 
         if (error == success) {
             this->_dAllocatedMemory -= this->_dMemoryMap[*ptr];
@@ -123,5 +128,7 @@ namespace Buffer {
 
         return error;
     }
+
+    ///////////////////////////////////////////////////////////////////////////
 
 }

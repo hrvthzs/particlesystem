@@ -4,6 +4,8 @@
 #include "sph_simulator.cuh"
 #include "sph_integrator.cu"
 #include "buffer_buffer.cu"
+#include "buffer_manager.cu"
+
 #include <iostream>
 namespace SPH {
 
@@ -14,6 +16,8 @@ namespace SPH {
         Buffer::Allocator *allocator = new Buffer::Allocator();
         Buffer::Buffer<float> *buffer = new Buffer::Buffer<float>(allocator, Buffer::host);
         std::cout << buffer->getSize() << std::endl;
+
+        Buffer::Manager<int> *manager = new Buffer::Manager<int>();
     }
 
     /**

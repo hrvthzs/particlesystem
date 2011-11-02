@@ -1,12 +1,14 @@
 #include "particle_system.h"
 #include "particle_system.cuh"
 #include "cutil_math.h"
+#include "sph_simulator.cuh"
 
 ParticleSystem::ParticleSystem(uint count, uint3 gridSize) {
     this->_count = count;
     this->_gridSize = gridSize;
 
     this->_initialize();
+
 }
 
 ParticleSystem::~ParticleSystem(){
@@ -53,7 +55,12 @@ void ParticleSystem::update(float deltaTime) {
 
     dPos = (float *) this->_mapGLBufferObject(&this->_cudaPositionsVBOResource);
 
-    integrateSystem(
+
+    SPH::Simulator *simulator = new SPH::Simulator();
+
+    simulator->integrate(this->_count, deltaTime, dPos);
+
+    /*integrateSystem(
         dPos,
         this->_cudaVelocities,
         deltaTime,
@@ -92,7 +99,7 @@ void ParticleSystem::update(float deltaTime) {
         this->_cudaCellEnd,
         this->_count,
         this->_gridCells
-    );
+    );*/
 
     this->_unmapGLBufferObject(this->_cudaPositionsVBOResource);
     cutilSafeCall(cutilDeviceSynchronize());

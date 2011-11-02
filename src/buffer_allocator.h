@@ -14,24 +14,75 @@ namespace Buffer {
     class Allocator {
 
         public:
+
+            /**
+             * Constructor
+             */
             Allocator();
+
+            /**
+             * Destructor
+             */
             virtual ~Allocator();
 
+            /**
+             * Allocate memory with specified size and location
+             * @param ptr pointer to memory
+             * @param size memory size
+             * @param memory memory location
+             * @return error type
+             */
             error_t allocate(void **ptr, size_t size, memory_t memory);
+
+            /**
+             * Free allocated memory
+             * @param ptr pointer to memory
+             * @param memory memory location
+             * @return error type
+             */
             error_t free(void **ptr, memory_t memory);
 
         private:
+
+            // allocated host memory size
             size_t _hAllocatedMemory;
+            // allocated device memory size
             size_t _dAllocatedMemory;
 
-
+            // map with key host memory pointer and value memory size
             MemoryMap _hMemoryMap;
+
+            // map with key device memory pointer and value memory size
             MemoryMap _dMemoryMap;
 
+            /**
+             * Allocate memory with specified size at host
+             * @param ptr pointer to memory
+             * @param size memory size
+             * @return error type
+             */
             error_t _allocateHost(void **ptr, size_t size);
+
+            /**
+             * Allocate memory with specified size at device
+             * @param ptr pointer to memory
+             * @param size memory size
+             * @return error type
+             */
             error_t _allocateDevice(void **ptr, size_t size);
 
+            /**
+             * Free allocated memory at host
+             * @param ptr pointer to memory
+             * @return error type
+             */
             error_t _freeHost(void **ptr);
+
+            /**
+             * Free allocated memory at device
+             * @param ptr pointer to memory
+             * @return error type
+             */
             error_t _freeDevice(void **ptr);
     };
 };

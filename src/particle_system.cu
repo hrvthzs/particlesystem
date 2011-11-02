@@ -381,3 +381,36 @@ void setParameters(ParticleSystemParameters *particleSystemParameters) {
     // copy parameters to constant memory
     cutilSafeCall(cudaMemcpyToSymbol(parameters, particleSystemParameters, sizeof(ParticleSystemParameters)));
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
