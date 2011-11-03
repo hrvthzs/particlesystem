@@ -53,6 +53,7 @@ CU_DEPS		:= \
 
 # C/C++ source files (compiled with gcc / c++)
 CCFILES		:= \
+	src/particles_renderer.cpp \
 	src/shader_program.cpp \
 	src/particle_system.cpp \
 	src/buffer.cpp \

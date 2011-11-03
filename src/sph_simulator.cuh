@@ -4,6 +4,7 @@
 #include "cutil_math.h"
 #include "sph.h"
 #include "buffer_manager.cuh"
+#include "particles_simulator.h"
 
 namespace SPH {
 
@@ -29,11 +30,12 @@ namespace SPH {
         float4* density;
     };
 
-    class Simulator {
+    class Simulator : public Particles::Simulator {
 
         public:
             Simulator();
             ~Simulator();
+            void update();
             void integrate (int numParticles, float deltaTime, float *pos);
 
         protected:

@@ -59,7 +59,7 @@ void ParticleSystem::update(float deltaTime) {
 
     //simulator->integrate(this->_count, deltaTime, dPos);
 
-    /*integrateSystem(
+    integrateSystem(
         dPos,
         this->_cudaVelocities,
         deltaTime,
@@ -98,7 +98,7 @@ void ParticleSystem::update(float deltaTime) {
         this->_cudaCellEnd,
         this->_count,
         this->_gridCells
-    );*/
+    );
 
     this->_unmapGLBufferObject(this->_cudaPositionsVBOResource);
     cutilSafeCall(cutilDeviceSynchronize());

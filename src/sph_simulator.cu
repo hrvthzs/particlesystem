@@ -39,6 +39,10 @@ namespace SPH {
 
     }
 
+    void Simulator::update() {
+
+    }
+
     /**
      * Round a / b to nearest higher integer value
      */
