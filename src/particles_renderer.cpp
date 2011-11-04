@@ -48,6 +48,7 @@ namespace Particles {
             this->_initSDL(24, 0);
             this->_onInit();
             this->_simulator->init();
+            this->_runCuda();
             this->_render(10);
 
         } catch(SDL_Exception & ex) {
@@ -270,7 +271,8 @@ namespace Particles {
         if (this->_animate) {
             this->_particleSystem->update(0.05f);
         } else {
-            this->_runCuda();
+            //this->_runCuda();
+            this->_simulator->update();
         }
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -311,6 +313,7 @@ namespace Particles {
         glEnableVertexAttribArray(this->_positionAttribute);
 
         // Draw data
+        //glBindBuffer(GL_ARRAY_BUFFER, this->_vbo);
         glBindBuffer(GL_ARRAY_BUFFER, this->_simulator->getPositionsVBO());
         glVertexAttribPointer(
             this->_positionAttribute,
@@ -457,26 +460,22 @@ namespace Particles {
                 &num_bytes,
                 vbo_resource
             )
-        );*/
+        );
 
-        //std::cout << this->_vbo << std::endl;
-        //std::cout << this->_simulator->getPositionsVBO() << std::endl;
+        // unmap buffer object
+        // DEPRECATED: cutilSafeCall(cudaGLUnmapBufferObject(vbo));
+        cutilSafeCall(cudaGraphicsUnmapResources(1, &vbo_resource, 0));
+        */
         this->_simulator->bindBuffers();
         float* ptr = this->_simulator->getPositions();
 
         launch_kernel(
             (float4*) ptr,
-            this->_meshWidth,
-            this->_meshHeight,
-            this->_deltaTime
+                      this->_meshWidth,
+                      this->_meshHeight,
+                      this->_deltaTime
         );
         this->_simulator->unbindBuffers();
-
-
-        // unmap buffer object
-        // DEPRECATED: cutilSafeCall(cudaGLUnmapBufferObject(vbo));
-        //cutilSafeCall(cudaGraphicsUnmapResources(1, &vbo_resource, 0));
-
     }
 
     ////////////////////////////////////////////////////////////////////////////

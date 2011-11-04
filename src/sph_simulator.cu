@@ -23,11 +23,11 @@ namespace SPH {
     }
 
     void Simulator::init() {
-        this->_numParticles = 16*16;
+        this->_numParticles = 8*8;
 
         //Buffer::Allocator *allocator = new Buffer::Allocator();
 
-        this->_positionsBuffer = new Buffer::Vertex<float>();
+        this->_positionsBuffer = new Buffer::Vertex<float4>();
 
         this->_positionsBuffer->allocate(this->_numParticles);
         //this->_positionsBuffer->bind();
@@ -41,7 +41,7 @@ namespace SPH {
     }
 
      float* Simulator::getPositions() {
-         return this->_positionsBuffer->get();
+         return (float*)this->_positionsBuffer->get();
     }
 
     void Simulator::bindBuffers() {
@@ -56,12 +56,12 @@ namespace SPH {
     /**
      * Intergrate system
      */
-    void Simulator::integrate (int numParticles, float deltaTime, float *pos) {
+    void Simulator::integrate (int numParticles, float deltaTime, float4 *pos) {
         uint minBlockSize, numBlocks, numThreads;
         minBlockSize = 416;
         this->_computeGridSize(numParticles, minBlockSize, numBlocks, numThreads);
 
-        integrate_kernel<<<numBlocks, numThreads>>>(numParticles, deltaTime, (float4*) pos);
+        integrate_kernel<<<numBlocks, numThreads>>>(numParticles, deltaTime, pos);
 
     }
 

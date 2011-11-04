@@ -41,7 +41,7 @@ namespace SPH {
             float* getPositions();
             void bindBuffers();
             void unbindBuffers();
-            void integrate (int numParticles, float deltaTime, float *pos);
+            void integrate (int numParticles, float deltaTime, float4* pos);
             //virtual Buffer::Vertex<float>* getPositionsBuffer();
 
         protected:
@@ -49,7 +49,7 @@ namespace SPH {
             void _computeGridSize(uint n, uint blockSize, uint &numBlocks, uint &numThreads);
 
             Buffer::Manager<sph_buffer_t> *_bufferManager;
-            Buffer::Vertex<float>* _positionsBuffer;
+            Buffer::Vertex<float4>* _positionsBuffer;
     };
 
 };
