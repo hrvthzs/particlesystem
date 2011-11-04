@@ -5,14 +5,6 @@
 #include "particles_renderer.h"
 #include "kernel.cuh"
 
-extern "C"
-void launch_kernel(
-    float4* pos,
-    unsigned int mesh_width,
-    unsigned int mesh_height,
-    float time
-);
-
 namespace Particles {
 
     ////////////////////////////////////////////////////////////////////////////
@@ -20,20 +12,28 @@ namespace Particles {
     Renderer::Renderer(Simulator* simulator) {
         this->_simulator = simulator;
 
-        this->_meshWidth = 128;
-        this->_meshHeight = 128;
+        this->_meshWidth = 8;
+        this->_meshHeight = 8;
         this->_animate = false;
         this->_deltaTime = 0.0;
+
+        this->_rotationX = 0.0f;
+        this->_rotationY = 0.0f;
         this->_translationZ = -5.0f;
+
+        this->_windowHeight = 600;
+        this->_windowWidth = 800;
+        this->_colorBits = 24;
+        this->_SDLSurface = NULL;
 
     }
 
     ////////////////////////////////////////////////////////////////////////////
 
     Renderer::~Renderer() {
-        delete this->_simulator;
-        delete this->_shaderProgram;
-        delete this->_particleSystem;
+        //delete this->_simulator;
+        //delete this->_shaderProgram;
+        //delete this->_particleSystem;
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -45,8 +45,9 @@ namespace Particles {
             // Shutdown SDL when program ends
             atexit(SDL_Quit);
 
-            this->_initSDL(800, 600, 24, 24, 0);
+            this->_initSDL(24, 0);
             this->_onInit();
+            this->_simulator->init();
             this->_render(10);
 
         } catch(SDL_Exception & ex) {
@@ -60,12 +61,12 @@ namespace Particles {
     ////////////////////////////////////////////////////////////////////////////
 
     void Renderer::_initSDL(
-        unsigned int width,
-        unsigned int height,
-        unsigned color,
         unsigned depth,
         unsigned stencil
     ) {
+
+        unsigned color = this->_colorBits;
+
         // Set OpenGL attributes
         if(SDL_GL_SetAttribute(SDL_GL_BUFFER_SIZE,    color) < 0 ||
            SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE,     depth) < 0 ||
@@ -75,16 +76,7 @@ namespace Particles {
             //throw SDL_Exception();
         }
 
-        this->_windowHeight = height;
-        this->_windowWidth = width;
-
-        // Create window
-        this->_SDLSurface =
-            SDL_SetVideoMode(width, height, color, SDL_OPENGL | SDL_RESIZABLE);
-
-            if(this->_SDLSurface == NULL) {
-            throw SDL_Exception();
-        }
+        this->_createSDLSurface();
 
         #ifndef USE_GLEE
             // Init extensions
@@ -97,6 +89,25 @@ namespace Particles {
             }
         #endif //USE_GLEE
 
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+
+    void Renderer::_createSDLSurface() {
+
+        // Create window
+        this->_SDLSurface =
+            SDL_SetVideoMode(
+                this->_windowWidth,
+                this->_windowHeight,
+                this->_colorBits,
+                SDL_OPENGL | SDL_RESIZABLE
+            );
+
+
+        if(this->_SDLSurface == NULL) {
+            throw SDL_Exception();
+        }
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -239,7 +250,6 @@ namespace Particles {
 
         this->_vbo = this->_particleSystem->getPositionsVBO();
 
-        this->_runCuda();
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -248,17 +258,19 @@ namespace Particles {
         glViewport(0, 0, width, height);
         this->_windowWidth = width;
         this->_windowHeight = height;
+
+        this->_createSDLSurface();
     }
 
     ////////////////////////////////////////////////////////////////////////////
 
     void Renderer::_onWindowRedraw() {
 
-        //std::cout << this->_rotationX << std::endl;
-        //std::cout << this->_rotationY << std::endl;
-        //std::cout << this->_translationZ << std::endl;
+
         if (this->_animate) {
             this->_particleSystem->update(0.05f);
+        } else {
+            this->_runCuda();
         }
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -299,7 +311,7 @@ namespace Particles {
         glEnableVertexAttribArray(this->_positionAttribute);
 
         // Draw data
-        glBindBuffer(GL_ARRAY_BUFFER, this->_vbo);
+        glBindBuffer(GL_ARRAY_BUFFER, this->_simulator->getPositionsVBO());
         glVertexAttribPointer(
             this->_positionAttribute,
             4,
@@ -432,7 +444,7 @@ namespace Particles {
     ////////////////////////////////////////////////////////////////////////////
 
     void Renderer::_runCuda() {
-        struct cudaGraphicsResource *vbo_resource =
+        /*struct cudaGraphicsResource *vbo_resource =
             this->_particleSystem->getCudaPositionsVBOResource();
         // map OpenGL buffer object for writing from CUDA
         float4 *dptr;
@@ -445,18 +457,26 @@ namespace Particles {
                 &num_bytes,
                 vbo_resource
             )
-        );
+        );*/
+
+        //std::cout << this->_vbo << std::endl;
+        //std::cout << this->_simulator->getPositionsVBO() << std::endl;
+        this->_simulator->bindBuffers();
+        float* ptr = this->_simulator->getPositions();
 
         launch_kernel(
-            dptr,
+            (float4*) ptr,
             this->_meshWidth,
             this->_meshHeight,
             this->_deltaTime
         );
+        this->_simulator->unbindBuffers();
+
 
         // unmap buffer object
         // DEPRECATED: cutilSafeCall(cudaGLUnmapBufferObject(vbo));
-        cutilSafeCall(cudaGraphicsUnmapResources(1, &vbo_resource, 0));
+        //cutilSafeCall(cudaGraphicsUnmapResources(1, &vbo_resource, 0));
+
     }
 
     ////////////////////////////////////////////////////////////////////////////

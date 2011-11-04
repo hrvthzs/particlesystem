@@ -26,7 +26,7 @@ namespace Buffer {
         host,
         device,
         hostPinned,
-        unknownMemory
+        unknownMemory,
     };
 
     typedef enum Errors error_t;

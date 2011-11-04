@@ -40,7 +40,7 @@ CUFILES		:= \
 	main.cu \
 	src/kernel.cu \
 	src/particle_system.cu \
-	src/buffer_buffer.cu \
+	src/buffer_memory.cu \
 	src/buffer_manager.cu \
 	src/sph_simulator.cu \
 
@@ -54,9 +54,12 @@ CU_DEPS		:= \
 # C/C++ source files (compiled with gcc / c++)
 CCFILES		:= \
 	src/particles_renderer.cpp \
+	src/particles_simulator.cpp \
 	src/shader_program.cpp \
 	src/particle_system.cpp \
 	src/buffer.cpp \
+	src/buffer_abstract_buffer.cpp \
+	src/buffer_vertex.cpp \
 	src/buffer_allocator.cpp \
 
 
@@ -79,3 +82,6 @@ include ../../common/common.mk
 
 run:
 	$(ROOTBINDIR)/$(OSLOWER)/$(BINSUBDIR)/$(EXECUTABLE)
+
+valgrind:
+	valgrind $(ROOTBINDIR)/$(OSLOWER)/$(BINSUBDIR)/$(EXECUTABLE)

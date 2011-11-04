@@ -4,8 +4,9 @@
 #include "sph_simulator.cuh"
 #include "sph_integrator.cu"
 
-// !!! template classes must be included definition too
-#include "buffer_buffer.cu"
+// !!! for template classes definitions must be included too
+#include "buffer_memory.cu"
+#include "buffer_vertex.cpp"
 #include "buffer_manager.cu"
 
 
@@ -15,17 +16,42 @@ namespace SPH {
      * Constructor
      */
     Simulator::Simulator () {
-        Buffer::Allocator *allocator = new Buffer::Allocator();
-        //Buffer::Buffer<float> *buffer = new Buffer::Buffer<float>(allocator, Buffer::host);
-
-
-        this->_bufferManager = new Buffer::Manager<sph_buffer_t>();
-
     }
 
     Simulator::~Simulator() {
         delete this->_bufferManager;
     }
+
+    void Simulator::init() {
+        this->_numParticles = 16*16;
+
+        //Buffer::Allocator *allocator = new Buffer::Allocator();
+
+        this->_positionsBuffer = new Buffer::Vertex<float>();
+
+        this->_positionsBuffer->allocate(this->_numParticles);
+        //this->_positionsBuffer->bind();
+
+        std::cout << this->_numParticles * sizeof(float) << std::endl;
+        std::cout << this->_positionsBuffer->getMemorySize() << std::endl;
+        this->_positionsVBO = this->_positionsBuffer->getVBO();
+        this->_bufferManager = new Buffer::Manager<sph_buffer_t>();
+
+
+    }
+
+     float* Simulator::getPositions() {
+         return this->_positionsBuffer->get();
+    }
+
+    void Simulator::bindBuffers() {
+        this->_positionsBuffer->bind();
+    }
+
+    void Simulator::unbindBuffers() {
+        this->_positionsBuffer->unbind();
+    }
+
 
     /**
      * Intergrate system
@@ -40,7 +66,7 @@ namespace SPH {
     }
 
     void Simulator::update() {
-
+        this->integrate(this->_numParticles, 0.05f, this->_positionsBuffer->get());
     }
 
     /**

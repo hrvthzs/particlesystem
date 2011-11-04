@@ -23,7 +23,7 @@ __global__ void kernel(float4* pos, unsigned int width, unsigned int height, flo
 }
 
 // Wrapper for the __global__ call that sets up the kernel call
-extern "C" void launch_kernel(float4* pos, unsigned int mesh_width, unsigned int mesh_height, float time)
+void launch_kernel(float4* pos, unsigned int mesh_width, unsigned int mesh_height, float time)
 {
     // execute the kernel
     dim3 block(8, 8, 1);

@@ -46,19 +46,20 @@ namespace Particles {
 
             void _render();
             void _render(unsigned period);
-            void _initSDL(
-                unsigned int width,
-                unsigned int height,
-                unsigned color,
-                unsigned depth,
-                unsigned stencil
-            );
+            void _initSDL(unsigned depth, unsigned stencil);
+            void _createSDLSurface();
             void _onInit();
             void _onWindowResized(int width, int height);
             void _onWindowRedraw();
             void _onKeyDown(SDLKey key, Uint16 mod);
             void _onKeyUp(SDLKey key, Uint16 mod);
-            void _onMouseMove(unsigned x, unsigned y, int xrel, int yrel, Uint8 buttons);
+            void _onMouseMove(
+                unsigned x,
+                unsigned y,
+                int xrel,
+                int yrel,
+                Uint8 buttons
+            );
             void _onMouseDown(Uint8 button, unsigned x, unsigned y);
             void _onMouseUp(Uint8 button, unsigned x, unsigned y);
 
@@ -74,6 +75,8 @@ namespace Particles {
 
             int _windowWidth;
             int _windowHeight;
+
+            unsigned _colorBits;
 
             float _rotationX;
             float _rotationY;

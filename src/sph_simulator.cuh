@@ -4,6 +4,7 @@
 #include "cutil_math.h"
 #include "sph.h"
 #include "buffer_manager.cuh"
+#include "buffer_vertex.h"
 #include "particles_simulator.h"
 
 namespace SPH {
@@ -35,14 +36,20 @@ namespace SPH {
         public:
             Simulator();
             ~Simulator();
+            void init();
             void update();
+            float* getPositions();
+            void bindBuffers();
+            void unbindBuffers();
             void integrate (int numParticles, float deltaTime, float *pos);
+            //virtual Buffer::Vertex<float>* getPositionsBuffer();
 
         protected:
             uint _iDivUp(uint a, uint b);
             void _computeGridSize(uint n, uint blockSize, uint &numBlocks, uint &numThreads);
 
             Buffer::Manager<sph_buffer_t> *_bufferManager;
+            Buffer::Vertex<float>* _positionsBuffer;
     };
 
 };

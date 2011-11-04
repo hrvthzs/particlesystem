@@ -5,6 +5,6 @@
 #ifndef _KERNEL_H_
 #define _KERNEL_H_
 
-__global__ void vecAdd(const float* A, const float* B, float* C, int N);
+void launch_kernel(float4* pos, unsigned int mesh_width, unsigned int mesh_height, float time);
 
 #endif // #ifndef _KERNEL_H_

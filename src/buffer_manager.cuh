@@ -1,7 +1,7 @@
 #ifndef __BUFFER_MANAGER_CUH__
 #define __BUFFER_MANAGER_CUH__
 
-#include "buffer_buffer.cuh"
+#include "buffer_abstract_buffer.h"
 
 #include <map>
 
@@ -19,7 +19,8 @@ namespace Buffer {
      * !!! Important !!!
      * Template classes must be included definition too
      */
-    template <class T> class Manager {
+    template <class T>
+    class Manager {
 
         public:
             /**
@@ -38,7 +39,7 @@ namespace Buffer {
              * @param id unique id of buffer
              * @param buffer buffer instance
              */
-            void addBuffer(T id, Buffer<void>* buffer);
+            void addBuffer(T id, AbstractBuffer<void>* buffer);
 
             /**
              * Remove buffer, free it and delete from memory
@@ -67,18 +68,18 @@ namespace Buffer {
              * @param id unique id of buffer
              * @return pointer to instance of buffer
              */
-            Buffer<void>* get(T id);
+            AbstractBuffer<void>* get(T id);
 
             /**
              * Get buffer via unique id
              * @param id unique id of buffer
              * @return pointer to instance of buffer
              */
-            Buffer<void>* operator[] (T id);
+            AbstractBuffer<void>* operator[] (T id);
 
         private:
 
-            typedef std::map<T, Buffer<void> *> BuffersMap;
+            typedef std::map<T, AbstractBuffer<void> *> BuffersMap;
             typedef typename BuffersMap::const_iterator BufferIterator;
 
             // buffers map
