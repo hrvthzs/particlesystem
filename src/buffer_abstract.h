@@ -1,5 +1,5 @@
-#ifndef __BUFFER_ABSTRACT_BUFFER_H__
-#define __BUFFER_ABSTRACT_BUFFER_H__
+#ifndef __BUFFER_ABSTRACT_H__
+#define __BUFFER_ABSTRACT_H__
 
 #include "buffer.h"
 
@@ -12,19 +12,19 @@ namespace Buffer {
      * For template classes definition must be included too
      */
     template <class T>
-    class AbstractBuffer {
+    class Abstract {
 
         public:
 
             /**
             * Constructor
             */
-            AbstractBuffer();
+            Abstract();
 
             /**
             * Destructor
             */
-            virtual ~AbstractBuffer();
+            virtual ~Abstract();
 
             /**
             * Bind buffer to texture
@@ -88,4 +88,4 @@ namespace Buffer {
     };
 };
 
-#endif // __BUFFER_ABSTRACT_BUFFER_H__
+#endif // __BUFFER_ABSTRACT_H__

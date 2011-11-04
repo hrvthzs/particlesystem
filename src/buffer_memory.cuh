@@ -3,7 +3,7 @@
 
 #include "buffer.h"
 #include "buffer_allocator.h"
-#include "buffer_abstract_buffer.h"
+#include "buffer_abstract.h"
 
 namespace Buffer {
 
@@ -14,7 +14,7 @@ namespace Buffer {
      * For template classes definition must be included too
      */
     template <class T>
-    class Memory : public AbstractBuffer<T> {
+    class Memory : public Abstract<T> {
 
         public:
 
@@ -65,6 +65,12 @@ namespace Buffer {
             virtual void free();
 
         private:
+
+            /**
+             * Initialize class variables
+             */
+            void _init(Allocator* allocator, memory_t memory);
+
             // allocator instance
             Allocator* _allocator;
 

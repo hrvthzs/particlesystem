@@ -9,24 +9,24 @@ namespace Buffer {
      * Error codes
      */
     enum Errors {
-        success,
-        memoryAllocationError,
-        unknownMemoryTypeError,
-        invalidPointerError,
-        invalidTexture,
-        invalidValue,
-        initializationError,
-        unknownError
+        Success,
+        MemoryAllocationError,
+        UnknownMemoryTypeError,
+        InvalidPointerError,
+        InvalidTexture,
+        InvalidValue,
+        InitializationError,
+        UnknownError
     };
 
     /**
      * Buffer memory locations
      */
     enum MemoryLocation {
-        host,
-        device,
-        hostPinned,
-        unknownMemory,
+        Host,
+        Device,
+        HostPinned,
+        UnknownMemory,
     };
 
     typedef enum Errors error_t;

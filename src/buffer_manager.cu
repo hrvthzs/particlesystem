@@ -2,18 +2,18 @@
 #define __BUFFER_MANAGER_CU__
 
 #include "buffer_manager.cuh"
-#include "buffer_abstract_buffer.cpp"
+#include "buffer_abstract.cpp"
 
 namespace Buffer {
 
-    ///////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
 
     template <class T>
     Manager<T>::Manager() {
 
     }
 
-    ///////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
 
     template <class T>
     Manager<T>::~Manager() {
@@ -21,20 +21,20 @@ namespace Buffer {
             this->_iterator != this->_buffers.end();
             ++this->_iterator
         ) {
-            AbstractBuffer<void> *buffer = this->_iterator->second;
+            Abstract<void> *buffer = this->_iterator->second;
             buffer->free();
             delete buffer;
         }
     }
 
-    ///////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
 
     template <class T>
-    void Manager<T>::addBuffer(T id, AbstractBuffer<void>* buffer) {
+    void Manager<T>::addBuffer(T id, Abstract<void>* buffer) {
         this->_buffers[id] = buffer;
     }
 
-    ///////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
 
     template <class T>
     void Manager<T>::removeBuffer(T id) {
@@ -50,7 +50,7 @@ namespace Buffer {
 
     }
 
-    ///////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
 
     template <class T>
     void Manager<T>::allocateBuffers(size_t size) {
@@ -59,12 +59,12 @@ namespace Buffer {
             this->_iterator != this->_buffers.end();
         ++this->_iterator
         ) {
-            AbstractBuffer<void> *buffer = this->_iterator->second;
+            Abstract<void> *buffer = this->_iterator->second;
             buffer->allocate(size);
         }
     }
 
-    ///////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
 
     template <class T>
     void Manager<T>::freeBuffers() {
@@ -73,12 +73,12 @@ namespace Buffer {
             this->_iterator != this->_buffers.end();
         ++this->_iterator
         ) {
-            AbstractBuffer<void> *buffer = this->_iterator->second;
+            Abstract<void> *buffer = this->_iterator->second;
             buffer->free();
         }
     }
 
-    ///////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
 
     template <class T>
     void Manager<T>::memsetBuffers(int value) {
@@ -87,30 +87,58 @@ namespace Buffer {
             this->_iterator != this->_buffers.end();
         ++this->_iterator
         ) {
-            AbstractBuffer<void> *buffer = this->_iterator->second;
+            Abstract<void> *buffer = this->_iterator->second;
             buffer->memset(value);
         }
     }
 
-    ///////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
 
     template <class T>
-    AbstractBuffer<void>* Manager<T>::get(T id) {
-        if (this->_buffers.find(id) != this->_buffers->end()) {
+    void Manager<T>::bindBuffers() {
+
+        for(this->_iterator = this->_buffers.begin();
+            this->_iterator != this->_buffers.end();
+            ++this->_iterator
+        ) {
+            Abstract<void> *buffer = this->_iterator->second;
+            buffer->bind();
+        }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+
+    template <class T>
+    void Manager<T>::unbindBuffers() {
+
+        for(this->_iterator = this->_buffers.begin();
+            this->_iterator != this->_buffers.end();
+        ++this->_iterator
+        ) {
+            Abstract<void> *buffer = this->_iterator->second;
+            buffer->unbind();
+        }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+
+    template <class T>
+    Abstract<void>* Manager<T>::get(T id) {
+        if (this->_buffers.find(id) != this->_buffers.end()) {
             return this->_buffers[id];
         } else {
             return NULL;
         }
     }
 
-    ///////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
 
     template <class T>
-    AbstractBuffer<void>* Manager<T>::operator[](T id) {
+    Abstract<void>* Manager<T>::operator[](T id) {
         return this->get(id);
     }
 
-    ///////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
 
 }
 

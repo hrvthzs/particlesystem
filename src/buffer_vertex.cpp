@@ -2,7 +2,7 @@
 #define __BUFFER_VERTEX_CPP__
 
 #include "buffer_vertex.h"
-#include "buffer_abstract_buffer.cpp"
+#include "buffer_abstract.cpp" // template class, so must include it
 #include "kernel.cuh"
 
 #include <iostream>
@@ -16,6 +16,9 @@ namespace Buffer {
         this->_bound = false;
         this->_size = 0;
         this->_memoryPtr = NULL;
+
+        // create buffer
+        glGenBuffers(1, &this->_VBO);
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -23,6 +26,11 @@ namespace Buffer {
     template<class T>
     Vertex<T>::~Vertex() {
         this->free();
+
+        // delete buffer
+        glBindBuffer(1, this->_VBO);
+        glDeleteBuffers(1, &this->_VBO);
+        this->_VBO = 0;
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -30,7 +38,7 @@ namespace Buffer {
     template<class T>
     error_t Vertex<T>::bind() {
 
-        error_t error = success;
+        error_t error = Success;
         size_t bytes;
 
         // TODO error handling
@@ -65,7 +73,7 @@ namespace Buffer {
 
     template<class T>
     error_t Vertex<T>::memset(int) {
-        return success;;
+        return Success;
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -86,8 +94,7 @@ namespace Buffer {
         // calculate size of required memory
         size_t allocationSize = size * sizeof(T);
 
-        // create buffer object
-        glGenBuffers(1, &this->_VBO);
+        // set buffer size
         glBindBuffer(GL_ARRAY_BUFFER, this->_VBO);
         glBufferData(GL_ARRAY_BUFFER, allocationSize, 0, GL_DYNAMIC_DRAW);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -111,9 +118,6 @@ namespace Buffer {
 
         cudaGraphicsUnregisterResource(this->_cudaVBOResource);
 
-        glBindBuffer(1, this->_VBO);
-        glDeleteBuffers(1, &this->_VBO);
-        this->_VBO = 0;
     }
 
     ////////////////////////////////////////////////////////////////////////////

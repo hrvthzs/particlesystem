@@ -5,10 +5,10 @@
 #include "sph_integrator.cu"
 
 // !!! for template classes definitions must be included too
-#include "buffer_memory.cu"
+#include "buffer_abstract.h"
 #include "buffer_vertex.cpp"
+#include "buffer_memory.cu"
 #include "buffer_manager.cu"
-
 
 namespace SPH {
 
@@ -23,33 +23,57 @@ namespace SPH {
     }
 
     void Simulator::init() {
-        this->_numParticles = 8*8;
+        this->_numParticles = 128*128;
 
-        //Buffer::Allocator *allocator = new Buffer::Allocator();
-
-        this->_positionsBuffer = new Buffer::Vertex<float4>();
-
-        this->_positionsBuffer->allocate(this->_numParticles);
-        //this->_positionsBuffer->bind();
-
-        std::cout << this->_numParticles * sizeof(float) << std::endl;
-        std::cout << this->_positionsBuffer->getMemorySize() << std::endl;
-        this->_positionsVBO = this->_positionsBuffer->getVBO();
         this->_bufferManager = new Buffer::Manager<sph_buffer_t>();
+        Buffer::Allocator *allocator = new Buffer::Allocator();
 
+        Buffer::Vertex<float4>* positionBuffer = new Buffer::Vertex<float4>();
+        Buffer::Memory<float4>* densityBuffer  = new Buffer::Memory<float4>();
+        Buffer::Memory<float4>* velocityBuffer = new Buffer::Memory<float4>();
+        Buffer::Memory<float4>* forceBuffer    = new Buffer::Memory<float4>();
+        Buffer::Memory<float4>* pressureBuffer = new Buffer::Memory<float4>();
 
+        this->_positionsVBO = positionBuffer->getVBO();
+
+        this->_bufferManager
+            ->addBuffer(Position, (Buffer::Abstract<void>*) positionBuffer);
+        this->_bufferManager
+            ->addBuffer(Density, (Buffer::Abstract<void>*) densityBuffer);
+        this->_bufferManager
+            ->addBuffer(Velocity, (Buffer::Abstract<void>*) velocityBuffer);
+        this->_bufferManager
+            ->addBuffer(Force, (Buffer::Abstract<void>*) forceBuffer);
+        this->_bufferManager
+            ->addBuffer(Pressure, (Buffer::Abstract<void>*) pressureBuffer);
+
+        this->_bufferManager->allocateBuffers(this->_numParticles);
+
+        size_t size = 0;
+        size += positionBuffer->getMemorySize();
+        size += densityBuffer->getMemorySize();
+        size += velocityBuffer->getMemorySize();
+        size += forceBuffer->getMemorySize();
+        size += pressureBuffer->getMemorySize();
+        std::cout << "Memory usage: " << size / 1024.0 / 1024.0 << " MB" << std::endl;
+
+    }
+
+    void Simulator::stop() {
+        this->_bufferManager->freeBuffers();
     }
 
      float* Simulator::getPositions() {
-         return (float*)this->_positionsBuffer->get();
+        Buffer::Abstract<void>* buffer = this->_bufferManager->get(Position);
+        return (float*) buffer->get();
     }
 
     void Simulator::bindBuffers() {
-        this->_positionsBuffer->bind();
+        this->_bufferManager->bindBuffers();
     }
 
     void Simulator::unbindBuffers() {
-        this->_positionsBuffer->unbind();
+        this->_bufferManager->unbindBuffers();
     }
 
 
@@ -66,7 +90,7 @@ namespace SPH {
     }
 
     void Simulator::update() {
-        this->integrate(this->_numParticles, 0.05f, this->_positionsBuffer->get());
+        this->integrate(this->_numParticles, 0.05f, (float4 *)this->getPositions());
     }
 
     /**

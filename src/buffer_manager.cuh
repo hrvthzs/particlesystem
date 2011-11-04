@@ -1,7 +1,7 @@
 #ifndef __BUFFER_MANAGER_CUH__
 #define __BUFFER_MANAGER_CUH__
 
-#include "buffer_abstract_buffer.h"
+#include "buffer_abstract.h"
 
 #include <map>
 
@@ -39,7 +39,7 @@ namespace Buffer {
              * @param id unique id of buffer
              * @param buffer buffer instance
              */
-            void addBuffer(T id, AbstractBuffer<void>* buffer);
+            void addBuffer(T id, Abstract<void>* buffer);
 
             /**
              * Remove buffer, free it and delete from memory
@@ -64,22 +64,32 @@ namespace Buffer {
             void memsetBuffers(int value);
 
             /**
-             * Get buffer via unique id
-             * @param id unique id of buffer
-             * @return pointer to instance of buffer
+             * Bind buffers (texture / VBO mapping)
              */
-            AbstractBuffer<void>* get(T id);
+            void bindBuffers();
+
+            /**
+             * Unbind buffers
+             */
+            void unbindBuffers();
 
             /**
              * Get buffer via unique id
              * @param id unique id of buffer
              * @return pointer to instance of buffer
              */
-            AbstractBuffer<void>* operator[] (T id);
+            Abstract<void>* get(T id);
+
+            /**
+             * Get buffer via unique id
+             * @param id unique id of buffer
+             * @return pointer to instance of buffer
+             */
+            Abstract<void>* operator[] (T id);
 
         private:
 
-            typedef std::map<T, AbstractBuffer<void> *> BuffersMap;
+            typedef std::map<T, Abstract<void> *> BuffersMap;
             typedef typename BuffersMap::const_iterator BufferIterator;
 
             // buffers map

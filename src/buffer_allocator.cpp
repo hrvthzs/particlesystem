@@ -23,14 +23,14 @@ namespace Buffer {
         error_t error;
 
         switch (memory) {
-            case host:
+            case Host:
                 error = this->_allocateHost(ptr, size);
                 break;
-            case device:
+            case Device:
                 error = this->_allocateDevice(ptr, size);
                 break;
             default:
-                error = unknownMemoryTypeError;
+                error = UnknownMemoryTypeError;
                 break;
         }
 
@@ -43,14 +43,14 @@ namespace Buffer {
         error_t error;
 
         switch (memory) {
-            case host:
+            case Host:
                 error = this->_freeHost(ptr);
                 break;
-            case device:
+            case Device:
                 error = this->_freeDevice(ptr);
                 break;
             default:
-                error = unknownMemoryTypeError;
+                error = UnknownMemoryTypeError;
         }
 
         return error;
@@ -64,11 +64,11 @@ namespace Buffer {
         *ptr = malloc(size);
 
         if (*ptr == NULL) {
-            error = memoryAllocationError;
+            error = MemoryAllocationError;
         } else {
             this->_hAllocatedMemory += size;
             this->_hMemoryMap[*ptr] = size;
-            error = success;
+            error = Success;
         }
 
         return error;
@@ -82,11 +82,11 @@ namespace Buffer {
         cudaError_t cudaError = cudaMalloc(ptr, size);
 
         if (cudaError == cudaErrorMemoryAllocation) {
-            error = memoryAllocationError;
+            error = MemoryAllocationError;
         } else {
             this->_dAllocatedMemory += size;
             this->_dMemoryMap[*ptr] = size;
-            error = success;
+            error = Success;
         }
 
         return error;
@@ -103,9 +103,9 @@ namespace Buffer {
             this->_hAllocatedMemory -= this->_hMemoryMap[*ptr];
             this->_hMemoryMap[*ptr] = 0;
             *ptr = NULL;
-            error = success;
+            error = Success;
         } else {
-            error = invalidPointerError;
+            error = InvalidPointerError;
         }
 
         return error;
@@ -120,7 +120,7 @@ namespace Buffer {
 
         error = parseCudaError(cudaError);
 
-        if (error == success) {
+        if (error == Success) {
             this->_dAllocatedMemory -= this->_dMemoryMap[*ptr];
             this->_dMemoryMap[*ptr] = 0;
             *ptr = NULL;

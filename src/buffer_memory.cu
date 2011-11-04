@@ -2,7 +2,7 @@
 #define __BUFFER_MEMORY_CU__
 
 #include "buffer_memory.cuh"
-#include "buffer_abstract_buffer.cpp"
+#include "buffer_abstract.cpp"
 
 #include <iostream>
 
@@ -12,18 +12,14 @@ namespace Buffer {
 
     template<class T>
     Memory<T>::Memory(Allocator* allocator, memory_t memory) {
-        this->_allocator = allocator;
-        this->_memory = memory;
-        this->_bound = false;
-        this->_size = 0;
-        this->_memoryPtr = NULL;
+        this->_init(allocator, memory);
     }
 
     ///////////////////////////////////////////////////////////////////////////
 
     template<class T>
-    Memory<T>::Memory() : Memory(new Allocator(), device){
-
+    Memory<T>::Memory() {
+        this->_init(new Allocator(), Device);
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -38,9 +34,9 @@ namespace Buffer {
     template<class T>
     error_t Memory<T>::bind() {
 
-        error_t error = success;
+        error_t error = Success;
 
-        if (this->_memory == device) {
+        if (this->_memory == Device) {
             cudaError_t cudaError = cudaBindTexture(
                 0,
                 this->_textureRef,
@@ -49,10 +45,9 @@ namespace Buffer {
             );
 
             error = parseCudaError(cudaError);
-
         }
 
-        if (error == success) {
+        if (error == Success) {
             this->_bound = true;
         }
 
@@ -64,7 +59,7 @@ namespace Buffer {
     template<class T>
     void Memory<T>::unbind() {
         if (this->_bound) {
-            if (this->_memory == device) {
+            if (this->_memory == Device) {
                 cudaUnbindTexture(this->_textureRef);
             }
             this->_bound = false;
@@ -76,22 +71,22 @@ namespace Buffer {
     template<class T>
     error_t Memory<T>::memset(int value) {
         size_t size = this->getMemorySize();
-        error_t error = success;
+        error_t error = Success;
         cudaError_t cudaError;
 
         if (size > 0) {
             switch (this->_memory) {
-                case host:
-                case hostPinned:
+                case Host:
+                case HostPinned:
                     ::memset(this->_memoryPtr, value, size);
-                    error = success;
+                    error = Success;
                     break;
-                case device:
+                case Device:
                     cudaError = cudaMemset(this->_memoryPtr, value, size);
                     error = parseCudaError(cudaError);
                     break;
                 default:
-                    error = unknownMemoryTypeError;
+                    error = UnknownMemoryTypeError;
             }
         }
 
@@ -123,7 +118,7 @@ namespace Buffer {
 
 
         // TODO handle error
-        if (error == success) {
+        if (error == Success) {
             this->_size = size;
         }
     }
@@ -140,7 +135,7 @@ namespace Buffer {
                 );
 
             // TODO handle error
-            if (error == success) {
+            if (error == Success) {
                 this->_size = 0;
                 this->_memoryPtr = NULL;
             }
@@ -148,6 +143,18 @@ namespace Buffer {
     }
 
     ///////////////////////////////////////////////////////////////////////////
+
+    template<class T>
+    void Memory<T>::_init(Allocator* allocator, memory_t memory) {
+        this->_allocator = allocator;
+        this->_memory = memory;
+        this->_bound = false;
+        this->_size = 0;
+        this->_memoryPtr = NULL;
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+
 }
 
 #endif // __BUFFER_MEMORY_BUFFER_ĆU__

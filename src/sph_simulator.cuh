@@ -9,34 +9,25 @@
 
 namespace SPH {
 
-
-    struct ParticleData {
-
-        // position of each particle
-        float4* position;
-
-        // color of each particle
-        float4* color;
-
-        // current velocity vector
-        float4* velocity;
-
-        // sum of SPH forces at particle position
-        float4* force;
-
-        // pressure at particle position
-        float4* pressure;
-
-        // density at particle position
-        float4* density;
-    };
-
     class Simulator : public Particles::Simulator {
 
         public:
             Simulator();
             ~Simulator();
+
+            /**
+             * Initialize simulator
+             *
+             * !!! Important !!!
+             * Don't call before the GL context is created
+             * else can cause segmentation fault
+             * Must be called as first method
+             */
             void init();
+            void stop();
+            /**
+             *
+             */
             void update();
             float* getPositions();
             void bindBuffers();

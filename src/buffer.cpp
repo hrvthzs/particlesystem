@@ -7,21 +7,21 @@ namespace Buffer {
 
         switch (cudaError) {
             case cudaSuccess:
-                error = success;
+                error = Success;
                 break;
             case cudaErrorInvalidValue:
-                error = invalidValue;
+                error = InvalidValue;
                 break;
             case cudaErrorInitializationError:
-                error = initializationError;
+                error = InitializationError;
             case cudaErrorInvalidDevicePointer:
-                error = invalidPointerError;
+                error = InvalidPointerError;
                 break;
             case cudaErrorInvalidTexture:
-                error = invalidTexture;
+                error = InvalidTexture;
                 break;
             default:
-                error = unknownError;
+                error = UnknownError;
                 break;
         }
 

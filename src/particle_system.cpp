@@ -168,6 +168,7 @@ void ParticleSystem::_initialize() {
         cudaGraphicsMapFlagsNone
     );
 
+
     this->_allocateCudaArray((void **)&this->_cudaColorsVBO, memSizeF);
     this->_allocateCudaArray((void**)&this->_cudaVelocities, memSizeF);
     this->_allocateCudaArray((void**)&this->_cudaSortedPositions, memSizeF);

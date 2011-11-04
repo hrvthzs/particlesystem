@@ -4,12 +4,12 @@
 #include <GL/glew.h>
 #include <cutil_inline.h>
 #include <cutil_gl_inline.h>
-#include "buffer_abstract_buffer.h"
+#include "buffer_abstract.h"
 
 namespace Buffer {
 
     template <class T>
-    class Vertex : public AbstractBuffer<T> {
+    class Vertex : public Abstract<T> {
         public:
 
             /**

@@ -12,8 +12,8 @@ namespace Particles {
     Renderer::Renderer(Simulator* simulator) {
         this->_simulator = simulator;
 
-        this->_meshWidth = 8;
-        this->_meshHeight = 8;
+        this->_meshWidth = 128;
+        this->_meshHeight = 128;
         this->_animate = false;
         this->_deltaTime = 0.0;
 
@@ -31,8 +31,8 @@ namespace Particles {
     ////////////////////////////////////////////////////////////////////////////
 
     Renderer::~Renderer() {
-        //delete this->_simulator;
-        //delete this->_shaderProgram;
+        delete this->_simulator;
+        delete this->_shaderProgram;
         //delete this->_particleSystem;
     }
 
@@ -46,8 +46,8 @@ namespace Particles {
             atexit(SDL_Quit);
 
             this->_initSDL(24, 0);
-            this->_onInit();
             this->_simulator->init();
+            this->_onInit();
             this->_runCuda();
             this->_render(10);
 
@@ -90,6 +90,7 @@ namespace Particles {
             }
         #endif //USE_GLEE
 
+        cudaGLSetGLDevice(cutGetMaxGflopsDeviceId());
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -133,23 +134,23 @@ namespace Particles {
 
                 // Call proper event handlers
                 switch(event.type) {
-                    case SDL_ACTIVEEVENT :// Stop redraw when minimized
+                    case SDL_ACTIVEEVENT: // Stop redraw when minimized
                         if(event.active.state == SDL_APPACTIVE)
                             active = event.active.gain;
                         break;
-                    case SDL_KEYDOWN :
+                    case SDL_KEYDOWN:
                         this->_onKeyDown(
                             event.key.keysym.sym,
                             event.key.keysym.mod
                         );
                         break;
-                    case SDL_KEYUP :
+                    case SDL_KEYUP:
                         this->_onKeyUp(
                             event.key.keysym.sym,
                             event.key.keysym.mod
                         );
                         break;
-                    case SDL_MOUSEMOTION :
+                    case SDL_MOUSEMOTION:
                         this->_onMouseMove(
                             event.motion.x,
                             event.motion.y,
@@ -158,21 +159,21 @@ namespace Particles {
                             event.motion.state
                         );
                         break;
-                    case SDL_MOUSEBUTTONDOWN :
+                    case SDL_MOUSEBUTTONDOWN:
                         this->_onMouseDown(
                             event.button.button,
                             event.button.x,
                             event.button.y
                         );
                         break;
-                    case SDL_MOUSEBUTTONUP :
+                    case SDL_MOUSEBUTTONUP:
                         this->_onMouseUp(
                             event.button.button,
                             event.button.x,
                             event.button.y
                         );
                         break;
-                    case SDL_QUIT :
+                    case SDL_QUIT:
                         return;// End main loop
                     case SDL_VIDEORESIZE :
                         this->_onWindowResized(
@@ -180,7 +181,7 @@ namespace Particles {
                             event.resize.h
                         );
                         break;
-                    case SDL_VIDEOEXPOSE :
+                    case SDL_VIDEOEXPOSE:
                         redraw = true;
                         break;
                     default :// Do nothing
@@ -240,16 +241,14 @@ namespace Particles {
         this->_mvpUniform =
             this->_shaderProgram->getUniformLocation("mvp");
 
-        std::cout << this->_positionAttribute << std::endl;
-        uint3 gridSize;
+        /*uint3 gridSize;
         gridSize.x = gridSize.y = gridSize.z = 10;
 
-
-        cudaGLSetGLDevice(0);
         this->_particleSystem =
             new ParticleSystem(this->_meshWidth * this->_meshHeight, gridSize);
-
         this->_vbo = this->_particleSystem->getPositionsVBO();
+        */
+        this->_vbo = this->_simulator->getPositionsVBO();
 
     }
 
@@ -269,10 +268,11 @@ namespace Particles {
 
 
         if (this->_animate) {
-            this->_particleSystem->update(0.05f);
+            //this->_particleSystem->update(0.05f);
+            this->_simulator->update();
         } else {
             //this->_runCuda();
-            this->_simulator->update();
+
         }
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -314,7 +314,7 @@ namespace Particles {
 
         // Draw data
         //glBindBuffer(GL_ARRAY_BUFFER, this->_vbo);
-        glBindBuffer(GL_ARRAY_BUFFER, this->_simulator->getPositionsVBO());
+        glBindBuffer(GL_ARRAY_BUFFER, this->_vbo);
         glVertexAttribPointer(
             this->_positionAttribute,
             4,
@@ -424,6 +424,8 @@ namespace Particles {
             throw SDL_Exception();
 
         }
+
+        this->_simulator->stop();
     }
 
     ////////////////////////////////////////////////////////////////////////////

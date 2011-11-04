@@ -58,7 +58,7 @@ CCFILES		:= \
 	src/shader_program.cpp \
 	src/particle_system.cpp \
 	src/buffer.cpp \
-	src/buffer_abstract_buffer.cpp \
+	src/buffer_abstract.cpp \
 	src/buffer_vertex.cpp \
 	src/buffer_allocator.cpp \
 

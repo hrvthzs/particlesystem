@@ -12,6 +12,7 @@ namespace Particles {
         virtual ~Simulator();
 
         virtual void init() = 0;
+        virtual void stop() = 0;
         virtual void update() = 0;
         virtual float* getPositions() = 0;
         virtual GLuint getPositionsVBO();
