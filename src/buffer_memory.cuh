@@ -82,4 +82,7 @@ namespace Buffer {
     };
 };
 
+// template class must include definition too
+#include "buffer_memory.cu"
+
 #endif // __BUFFER_MEMORY_CUH__

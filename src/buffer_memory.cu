@@ -1,9 +1,6 @@
 #ifndef __BUFFER_MEMORY_CU__
 #define __BUFFER_MEMORY_CU__
 
-#include "buffer_memory.cuh"
-#include "buffer_abstract.cpp"
-
 #include <iostream>
 
 namespace Buffer {

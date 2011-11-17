@@ -36,10 +36,8 @@ namespace SPH {
             //virtual Buffer::Vertex<float>* getPositionsBuffer();
 
         protected:
-            uint _iDivUp(uint a, uint b);
-            void _computeGridSize(uint n, uint blockSize, uint &numBlocks, uint &numThreads);
 
-            Buffer::Manager<sph_buffer_t> *_bufferManager;
+            Buffer::Manager<Buffers> *_bufferManager;
             Buffer::Vertex<float4>* _positionsBuffer;
     };
 

@@ -47,6 +47,8 @@ namespace Buffer {
 
             /**
              * Free buffer from memory
+             * Must called before the GL/SDL context is destroyed,
+             * it not program ends with segmentation fault error
              */
             virtual void free();
 
@@ -61,5 +63,8 @@ namespace Buffer {
             GLuint _VBO;
     };
 };
+
+// template class must include definition too
+#include "buffer_vertex.cpp"
 
 #endif // __BUFFER_VERTEX_H__

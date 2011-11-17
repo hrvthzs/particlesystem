@@ -1,8 +1,6 @@
 #ifndef __BUFFER_VERTEX_CPP__
 #define __BUFFER_VERTEX_CPP__
 
-#include "buffer_vertex.h"
-#include "buffer_abstract.cpp" // template class, so must include it
 #include "kernel.cuh"
 
 #include <iostream>

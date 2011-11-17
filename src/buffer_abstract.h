@@ -88,4 +88,7 @@ namespace Buffer {
     };
 };
 
+// template class must include definition too
+#include "buffer_abstract.cpp"
+
 #endif // __BUFFER_ABSTRACT_H__

@@ -37,15 +37,17 @@
 EXECUTABLE	:= particleSystem
 # CUDA source files (compiled with cudacc)
 CUFILES		:= \
-	main.cu \
 	src/kernel.cu \
+	src/main.cu \
 	src/particle_system.cu \
-	src/buffer_memory.cu \
-	src/buffer_manager.cu \
+	src/grid_uniform.cu \
 	src/sph_simulator.cu \
+	src/utils.cu \
 
 # CUDA dependency files
 CU_DEPS		:= \
+	src/grid_utils.cu \
+	src/grid_kernel.cu \
 	src/sph_integrator.cu \
 	src/sph_kernels_poly6.cu \
 	src/sph_kernels.cu \
@@ -53,14 +55,13 @@ CU_DEPS		:= \
 
 # C/C++ source files (compiled with gcc / c++)
 CCFILES		:= \
+	src/buffer.cpp \
+	src/buffer_allocator.cpp \
 	src/particles_renderer.cpp \
 	src/particles_simulator.cpp \
-	src/shader_program.cpp \
 	src/particle_system.cpp \
-	src/buffer.cpp \
-	src/buffer_abstract.cpp \
-	src/buffer_vertex.cpp \
-	src/buffer_allocator.cpp \
+	src/shader_program.cpp \
+
 
 
 # Additional compiler flags and LIBs to include

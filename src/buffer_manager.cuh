@@ -8,13 +8,13 @@
 namespace Buffer {
 
     /**
-     * Manager handles allocation, freeing of buffers.
+     * Manager handles allocation and freeing buffers.
      * Class allows setting memory for all containing buffer to
-     * a specified value. Was is important, number of elements for
+     * a specified value, eg. 0. What is important, number of elements for
      * all buffers is set to same value via allocation method.
      * Most important is when an instance of Manager class is
      * deleted from memory, it's destructor will free and delete all
-     * containing buffers too.
+     * containing buffers too, so you do not need to delete and free them.
      *
      * !!! Important !!!
      * Template classes must be included definition too
@@ -38,14 +38,16 @@ namespace Buffer {
              * Add buffer
              * @param id unique id of buffer
              * @param buffer buffer instance
+             * @return self
              */
-            void addBuffer(T id, Abstract<void>* buffer);
+            Manager* addBuffer(T id, Abstract<void>* buffer);
 
             /**
              * Remove buffer, free it and delete from memory
              * @param id unique id of buffer
+             * @return self
              */
-            void removeBuffer(T id);
+            Manager* removeBuffer(T id);
 
             /**
              * Allocate buffer with specified size
@@ -55,11 +57,14 @@ namespace Buffer {
 
             /**
              * Free buffers
+             * Must call before the GL/SDL context is
+             * destroyed else segmentation fault is thrown
+             * if using Buffer::Vertex
              */
             void freeBuffers();
 
             /**
-             * Initialize buffers with requested value
+             * eet buffers to requested value
              */
             void memsetBuffers(int value);
 
@@ -101,5 +106,8 @@ namespace Buffer {
     };
 
 };
+
+// template class must include definition too
+#include "buffer_manager.cu"
 
 #endif // __BUFFER_MANAGER_CUH__

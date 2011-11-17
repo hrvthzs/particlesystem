@@ -3,7 +3,7 @@
 
 namespace SPH {
 
-    enum Buffers {
+    enum eBuffers {
         Color,
         Density,
         Force,
@@ -41,7 +41,7 @@ namespace SPH {
 
 
     typedef struct sParticleData ParticleData;
-    typedef enum Buffers sph_buffer_t;
+    typedef enum eBuffers Buffers;
 }
 
 #endif // __SPH_H__

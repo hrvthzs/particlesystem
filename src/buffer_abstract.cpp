@@ -1,8 +1,6 @@
 #ifndef __BUFFER_ABSTRACT_CPP__
 #define __BUFFER_ABSTRACT_CPP__
 
-#include "buffer_abstract.h"
-
 namespace Buffer {
 
     ///////////////////////////////////////////////////////////////////////////

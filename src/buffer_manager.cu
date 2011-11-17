@@ -1,9 +1,6 @@
 #ifndef __BUFFER_MANAGER_CU__
 #define __BUFFER_MANAGER_CU__
 
-#include "buffer_manager.cuh"
-#include "buffer_abstract.cpp"
-
 namespace Buffer {
 
     ////////////////////////////////////////////////////////////////////////////
@@ -30,14 +27,15 @@ namespace Buffer {
     ////////////////////////////////////////////////////////////////////////////
 
     template <class T>
-    void Manager<T>::addBuffer(T id, Abstract<void>* buffer) {
+    Manager<T>* Manager<T>::addBuffer(T id, Abstract<void>* buffer) {
         this->_buffers[id] = buffer;
+        return this;
     }
 
     ////////////////////////////////////////////////////////////////////////////
 
     template <class T>
-    void Manager<T>::removeBuffer(T id) {
+    Manager<T>* Manager<T>::removeBuffer(T id) {
         this->_iterator = this->_buffers->find(id);
 
         for(this->_iterator = this->_buffers.begin();
@@ -47,6 +45,7 @@ namespace Buffer {
             this->_buffers.erase(id);
             delete this->_iterator->second;
         }
+        return this;
 
     }
 

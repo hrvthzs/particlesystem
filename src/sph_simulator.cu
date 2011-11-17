@@ -4,11 +4,13 @@
 #include "sph_simulator.cuh"
 #include "sph_integrator.cu"
 
-// !!! for template classes definitions must be included too
 #include "buffer_abstract.h"
-#include "buffer_vertex.cpp"
-#include "buffer_memory.cu"
-#include "buffer_manager.cu"
+#include "buffer_vertex.h"
+#include "buffer_memory.cuh"
+#include "buffer_manager.cuh"
+#include "utils.cuh"
+
+#include <iostream>
 
 namespace SPH {
 
@@ -25,7 +27,7 @@ namespace SPH {
     void Simulator::init() {
         this->_numParticles = 128*128;
 
-        this->_bufferManager = new Buffer::Manager<sph_buffer_t>();
+        this->_bufferManager = new Buffer::Manager<Buffers>();
         Buffer::Allocator *allocator = new Buffer::Allocator();
 
         Buffer::Vertex<float4>* positionBuffer = new Buffer::Vertex<float4>();
@@ -37,14 +39,10 @@ namespace SPH {
         this->_positionsVBO = positionBuffer->getVBO();
 
         this->_bufferManager
-            ->addBuffer(Position, (Buffer::Abstract<void>*) positionBuffer);
-        this->_bufferManager
-            ->addBuffer(Density, (Buffer::Abstract<void>*) densityBuffer);
-        this->_bufferManager
-            ->addBuffer(Velocity, (Buffer::Abstract<void>*) velocityBuffer);
-        this->_bufferManager
-            ->addBuffer(Force, (Buffer::Abstract<void>*) forceBuffer);
-        this->_bufferManager
+            ->addBuffer(Position, (Buffer::Abstract<void>*) positionBuffer)
+            ->addBuffer(Density,  (Buffer::Abstract<void>*) densityBuffer)
+            ->addBuffer(Velocity, (Buffer::Abstract<void>*) velocityBuffer)
+            ->addBuffer(Force,    (Buffer::Abstract<void>*) forceBuffer)
             ->addBuffer(Pressure, (Buffer::Abstract<void>*) pressureBuffer);
 
         this->_bufferManager->allocateBuffers(this->_numParticles);
@@ -55,7 +53,7 @@ namespace SPH {
         size += velocityBuffer->getMemorySize();
         size += forceBuffer->getMemorySize();
         size += pressureBuffer->getMemorySize();
-        std::cout << "Memory usage: " << size / 1024.0 / 1024.0 << " MB" << std::endl;
+        std::cout << "Memory usage: " << size / 1024.0 / 1024.0 << " MB\n";
 
     }
 
@@ -64,8 +62,7 @@ namespace SPH {
     }
 
      float* Simulator::getPositions() {
-        Buffer::Abstract<void>* buffer = this->_bufferManager->get(Position);
-        return (float*) buffer->get();
+        return (float*) this->_bufferManager->get(Position)->get();
     }
 
     void Simulator::bindBuffers() {
@@ -83,7 +80,7 @@ namespace SPH {
     void Simulator::integrate (int numParticles, float deltaTime, float4 *pos) {
         uint minBlockSize, numBlocks, numThreads;
         minBlockSize = 416;
-        this->_computeGridSize(numParticles, minBlockSize, numBlocks, numThreads);
+        Utils::computeGridSize(numParticles, minBlockSize, numBlocks, numThreads);
 
         integrate_kernel<<<numBlocks, numThreads>>>(numParticles, deltaTime, pos);
 
@@ -91,26 +88,6 @@ namespace SPH {
 
     void Simulator::update() {
         this->integrate(this->_numParticles, 0.05f, (float4 *)this->getPositions());
-    }
-
-    /**
-     * Round a / b to nearest higher integer value
-     */
-    uint Simulator::_iDivUp(uint a, uint b) {
-        return (a % b != 0) ? (a / b + 1) : (a / b);
-    }
-
-    /*
-     * Compute grid and thread block size for a given number of elements
-     *
-     * @param n - number of particles
-     * @param blockSize - minimal number of threads in block
-     * @param numBlocks - outputs number of required block in grid
-     * @param numThreads - outputs number of required threads in blocks
-     */
-    void Simulator::_computeGridSize(uint n, uint blockSize, uint &numBlocks, uint &numThreads) {
-        numThreads = min(blockSize, n);
-        numBlocks = this->_iDivUp(n, numThreads);
     }
 
 };
