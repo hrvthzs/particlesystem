@@ -12,6 +12,8 @@
 
 #include <iostream>
 
+using namespace std;
+
 namespace SPH {
 
     /**
@@ -22,13 +24,15 @@ namespace SPH {
 
     Simulator::~Simulator() {
         delete this->_bufferManager;
+        delete this->_grid;
+        delete this->_database;
     }
 
     void Simulator::init() {
         this->_numParticles = 128*128;
 
         this->_bufferManager = new Buffer::Manager<Buffers>();
-        Buffer::Allocator *allocator = new Buffer::Allocator();
+        Buffer::Allocator* allocator = new Buffer::Allocator();
 
         Buffer::Vertex<float4>* positionBuffer = new Buffer::Vertex<float4>();
         Buffer::Memory<float4>* densityBuffer  = new Buffer::Memory<float4>();
@@ -55,10 +59,24 @@ namespace SPH {
         size += pressureBuffer->getMemorySize();
         std::cout << "Memory usage: " << size / 1024.0 / 1024.0 << " MB\n";
 
+        this->_grid = new Grid::Uniform();
+        this->_grid->allocate(this->_numParticles, 1.0f, 128.0f);
+
+        this->_database = new Settings::Database();
+        this->_database->addUpdateCallback(this);
+        this->_database
+            ->insert(Settings::GridSize, "Grid size", 10.0f, 20.0f, 5.3f);
+        this->_database->print();
+
+        this->_database->updateValue(Settings::GridSize, 5.4f);
+        this->_database->print();
+
+
     }
 
     void Simulator::stop() {
         this->_bufferManager->freeBuffers();
+        this->_grid->free();
     }
 
      float* Simulator::getPositions() {
@@ -87,7 +105,14 @@ namespace SPH {
     }
 
     void Simulator::update() {
+        this->_grid->hash((float4*) this->getPositions());
+        this->_grid->sort();
         this->integrate(this->_numParticles, 0.05f, (float4 *)this->getPositions());
+        //cutilSafeCall(cutilDeviceSynchronize());
+    }
+
+    void Simulator::valueChanged(Settings::RecordType type) {
+        cout << "Value changed: " << type << endl;
     }
 
 };

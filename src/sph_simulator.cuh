@@ -1,11 +1,14 @@
 #ifndef __SPH_SIMULATOR_CUH__
 #define __SPH_SIMULATOR_CUH__
 
-#include "cutil_math.h"
-#include "sph.h"
+#include <cutil_math.h>
 #include "buffer_manager.cuh"
 #include "buffer_vertex.h"
+#include "grid_uniform.cuh"
 #include "particles_simulator.h"
+#include "settings.h"
+#include "settings_database.h"
+#include "sph.h"
 
 namespace SPH {
 
@@ -35,10 +38,15 @@ namespace SPH {
             void integrate (int numParticles, float deltaTime, float4* pos);
             //virtual Buffer::Vertex<float>* getPositionsBuffer();
 
+            void valueChanged(Settings::RecordType type);
+
         protected:
 
             Buffer::Manager<Buffers> *_bufferManager;
             Buffer::Vertex<float4>* _positionsBuffer;
+
+            Grid::Uniform* _grid;
+            Settings::Database* _database;
     };
 
 };

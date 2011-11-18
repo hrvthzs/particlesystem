@@ -60,6 +60,7 @@ CCFILES		:= \
 	src/particles_renderer.cpp \
 	src/particles_simulator.cpp \
 	src/particle_system.cpp \
+	src/settings_database.cpp \
 	src/shader_program.cpp \
 
 

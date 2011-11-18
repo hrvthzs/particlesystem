@@ -11,6 +11,8 @@ namespace Grid {
     Uniform::Uniform() {
 
         this->_allocated = false;
+        this->_numParticles = 0;
+        this->_numCells = 0;
 
         this->_cellBufferManager = new Buffer::Manager<GridBuffers>();
         this->_particleBufferManager = new Buffer::Manager<GridBuffers>();
@@ -22,7 +24,7 @@ namespace Grid {
 
         this->_cellBufferManager
             ->addBuffer(CellStart, (Buffer::Abstract<void>*) cellStart)
-            ->addBuffer(CellStart, (Buffer::Abstract<void>*) cellStop);
+            ->addBuffer(CellStop, (Buffer::Abstract<void>*) cellStop);
 
         this->_particleBufferManager
             ->addBuffer(Hash, (Buffer::Abstract<void>*) hash)
@@ -44,15 +46,8 @@ namespace Grid {
 
     ////////////////////////////////////////////////////////////////////////////
 
-    GridData Uniform::getData() {
-        GridData data;
-
-        data.hash = (uint*) this->_particleBufferManager->get(Hash)->get();
-        data.index = (uint*) this->_particleBufferManager->get(Index)->get();
-        data.cellStart = (uint*) this->_cellBufferManager->get(CellStart)->get();
-        data.cellStop = (uint*) this->_cellBufferManager->get(CellStop)->get();
-
-        return data;
+    GridData Uniform::getData() const {
+        return _data;
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -85,11 +80,20 @@ namespace Grid {
         this->_particleBufferManager->allocateBuffers(this->_numParticles);
         this->_cellBufferManager->allocateBuffers(this->_numCells);
 
-        GridData data = this->getData();
+        // setup pointers to buffers
+        this->_data.hash =
+            (uint*) this->_particleBufferManager->get(Hash)->get();
+        this->_data.index =
+            (uint*) this->_particleBufferManager->get(Index)->get();
+        this->_data.cellStart =
+            (uint*) this->_cellBufferManager->get(CellStart)->get();
+        this->_data.cellStop =
+            (uint*) this->_cellBufferManager->get(CellStop)->get();
+
 
         // create device pointers for sorting indexes
-        this->_thrustHash = new thrust::device_ptr<uint>(data.hash);
-        this->_thrustIndex = new thrust::device_ptr<uint>(data.index);
+        this->_thrustHash = new thrust::device_ptr<uint>(this->_data.hash);
+        this->_thrustIndex = new thrust::device_ptr<uint>(this->_data.index);
 
         this->_allocated = true;
 
@@ -110,11 +114,13 @@ namespace Grid {
         delete this->_thrustIndex;
 
         this->_allocated = false;
+        this->_numParticles = 0;
+        this->_numCells = 0;
     }
 
     ////////////////////////////////////////////////////////////////////////////
 
-    void Uniform::hash() {
+    void Uniform::hash(float4* positions) {
         this->_particleBufferManager->get(Hash)->memset(0);
 
         uint minBlockSize, numBlocks, numThreads;
@@ -128,7 +134,7 @@ namespace Grid {
 
         GridData data = this->getData();
         Kernel::hash<<<numBlocks, numThreads>>>(
-            this->_numParticles, NULL, data
+            this->_numParticles, positions, data
         );
 
     }
@@ -136,11 +142,13 @@ namespace Grid {
     ////////////////////////////////////////////////////////////////////////////
 
     void Uniform::sort() {
+
         thrust::sort_by_key(
-            this->_thrustHash,
-            this->_thrustHash + this->_numParticles,
-            this->_thrustIndex
+            *this->_thrustHash,
+            *this->_thrustHash + this->_numParticles,
+            *this->_thrustIndex
         );
+
     }
 
     ////////////////////////////////////////////////////////////////////////////

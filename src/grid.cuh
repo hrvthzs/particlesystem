@@ -19,7 +19,7 @@
         float3 size;
         float3 min;
         float3 max;
-        // number of cells in each dimension/side of grid
+        // number of cells in each dimension
         float3 resolution;
         float3 delta;
     };

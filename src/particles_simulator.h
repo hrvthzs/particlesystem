@@ -3,9 +3,12 @@
 
 #include <GL/glew.h>
 
-namespace Particles {
+#include "settings.h"
+#include "settings_updatecallback.h"
 
-    class Simulator {
+namespace Particles{
+
+    class Simulator : public Settings::UpdateCallback {
 
     public:
         Simulator();
@@ -19,6 +22,8 @@ namespace Particles {
         virtual void bindBuffers() = 0;
         virtual void unbindBuffers() = 0;
         unsigned int getNumParticles();
+
+        virtual void valueChanged(Settings::RecordType type);
 
     protected:
         unsigned int _numParticles;
