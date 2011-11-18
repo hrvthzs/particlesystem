@@ -1,8 +1,12 @@
 #include "grid_uniform.cuh"
 
+#include <iostream>
+
 #include "buffer_memory.cuh"
-#include "utils.cuh"
 #include "grid_kernel.cu"
+#include "sph.h"
+#include "utils.cuh"
+
 
 namespace Grid {
 
@@ -46,7 +50,7 @@ namespace Grid {
 
     ////////////////////////////////////////////////////////////////////////////
 
-    GridData Uniform::getData() const {
+    GridData& Uniform::getData() {
         return _data;
     }
 
@@ -132,9 +136,8 @@ namespace Grid {
             numThreads
         );
 
-        GridData data = this->getData();
         Kernel::hash<<<numBlocks, numThreads>>>(
-            this->_numParticles, positions, data
+            this->_numParticles, positions, this->_data
         );
 
     }
@@ -149,6 +152,12 @@ namespace Grid {
             *this->_thrustIndex
         );
 
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+
+    void Uniform::emptyCells() {
+        this->_cellBufferManager->get(CellStart)->memset(EMPTY_CELL_VALUE);
     }
 
     ////////////////////////////////////////////////////////////////////////////

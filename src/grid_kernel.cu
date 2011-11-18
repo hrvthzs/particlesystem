@@ -3,9 +3,8 @@
 
 #include <cutil_math.h>
 
- #include "grid.cuh"
+#include "grid.cuh"
 #include "grid_utils.cu"
-
 
 namespace Grid {
 

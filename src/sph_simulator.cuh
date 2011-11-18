@@ -42,11 +42,19 @@ namespace SPH {
 
         protected:
 
+
             Buffer::Manager<Buffers> *_bufferManager;
             Buffer::Vertex<float4>* _positionsBuffer;
 
             Grid::Uniform* _grid;
             Settings::Database* _database;
+
+            Data _particleData;
+            Data _sortedData;
+
+        private:
+            void _createBuffers();
+            void _orderData();
     };
 
 };

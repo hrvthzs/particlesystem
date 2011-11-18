@@ -30,5 +30,10 @@
 
     __constant__ GridParams cudaGridParams;
 
+    /**
+     * If cell is empty in grid this value idicates it
+     */
+    #define EMPTY_CELL_VALUE 0xffffffff
+
 
 #endif // __GRID_H__

@@ -12,13 +12,33 @@ using namespace std;
 
 namespace Settings {
 
+    /**
+     * Database class for storing simulation settings
+     * On value change added callbacks are triggered
+     */
     class Database {
 
         public:
-
+            /*
+             * Constructor
+             */
             Database();
+
+            /**
+             * Destructor
+             */
             virtual ~Database();
 
+            /**
+             * Insert new record to database
+             *
+             * @param type type of record
+             * @param name record name
+             * @param minimum minimal value for record
+             * @param maximum maximal value for record
+             * @param unit unit type (kg, cm, etc.)
+             * @param editable if true is read only
+             */
             void insert(
                 RecordType type,
                 string name,
@@ -29,6 +49,15 @@ namespace Settings {
                 bool editable = true
             );
 
+            /**
+             * Insert new record to database
+             *
+             * @param type type of record
+             * @param name record name
+             * @param minimum minimal value for record
+             * @param maximum maximal value for record
+             * @param editable if true is read only
+             */
             void insert(
                 RecordType type,
                 string name,
@@ -38,6 +67,15 @@ namespace Settings {
                 bool editable
             );
 
+            /**
+             * Insert new record to database
+             *
+             * @param type type of record
+             * @param name record name
+             * @param minimum minimal value for record
+             * @param maximum maximal value for record
+             * @param unit unit type (kg, cm, etc.)
+             */
             void insert(
                 RecordType type,
                 string name,
@@ -47,13 +85,45 @@ namespace Settings {
                 string unit
             );
 
+            /**
+             * Update minimal value for record
+             *
+             * @param type type of record
+             * @param minimum value
+             */
             void updateMinimum(RecordType type, float minimum);
+
+            /**
+             * Update maximal value for record
+             *
+             * @param type type of record
+             * @param maximum value
+             */
             void updateMaximum(RecordType type, float maximum);
+
+            /**
+             * Update value of record
+             *
+             * @param type type of record
+             * @param value value
+             */
             void updateValue(RecordType type, float value);
+
+            /**
+             * Get value of record
+             *
+             * @param type type of record
+             */
             float selectValue(RecordType type);
 
+            /**
+             * Add update callback for value change notification
+             */
             void addUpdateCallback(UpdateCallback* callback);
 
+            /**
+             * Print content of database to standart output
+             */
             void print();
 
         private:

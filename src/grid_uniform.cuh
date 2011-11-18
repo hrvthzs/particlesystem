@@ -40,7 +40,7 @@ namespace Grid {
              * @return struct which contains pointers to buffers (hashcodes,
              *         indexes, ..,)
              */
-            GridData getData() const;
+            GridData& getData();
 
             /**
              * Get number of grid cells
@@ -67,6 +67,11 @@ namespace Grid {
              * Sort indexes
              */
             void sort();
+
+            /**
+             * Empty cells
+             */
+            void emptyCells();
 
         private:
 

@@ -37,13 +37,27 @@ namespace Grid {
             int3 const &position,
             GridParams const &params
         ) {
+
+            int rx = (int) floor(params.resolution.x);
+            int ry = (int) floor(params.resolution.y);
+            int rz = (int) floor(params.resolution.z);
+
+            // wrap grid... but since we can not assume size is power of 2 we can't use binary AND/& :/
+            int px = position.x % rx;
+            int py = position.y % ry;
+            int pz = position.z % rz;
+
+            if(px < 0) px += rx;
+            if(py < 0) py += ry;
+            if(pz < 0) pz += rz;
+
             // hash = x + y*width + z*width+height
             return
-                position.x +
-                __mul24(position.y, params.resolution.x) +
+                px +
+                __mul24(py, params.resolution.x) +
                 __mul24(
                     params.resolution.x,
-                    __umul24(position.z, params.resolution.y)
+                    __umul24(pz, params.resolution.y)
                 );
         }
 

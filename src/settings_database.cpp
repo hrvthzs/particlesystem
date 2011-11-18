@@ -82,7 +82,7 @@ namespace Settings {
     void Database::updateValue(RecordType type, float value) {
         if (this->_settingsMap.find(type) == this->_settingsMap.end()) {
             cout << "Warning: SettingsDatabase can't find setting with record "
-            << "with type " << type << endl;
+                 << "with type " << type << endl;
             return;
         } else {
 
@@ -90,16 +90,6 @@ namespace Settings {
 
             if (old != value) {
                 this->_settingsMap[type].value = value;
-
-                // TODO callbacks
-                /*CallbackVector::const_iterator it;
-                for(
-                    it = this->_callbackVector.begin();
-                    it != this->_callbackVector.end();
-                    ++it
-                ) {
-                    (*it)->valueChanged(type);
-                }*/
 
                 for (unsigned int i=0; i<this->_callbackVector.size(); i++) {
                     this->_callbackVector[i]->valueChanged(type);
@@ -135,7 +125,7 @@ namespace Settings {
              << setfill('#')
              << setw(30) << ""
              << " Settings database "
-             << setw(30) << ""
+             << setw(31) << ""
              << setfill(' ')
              << endl
              << endl;

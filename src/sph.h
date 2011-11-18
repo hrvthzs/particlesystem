@@ -1,6 +1,8 @@
 #ifndef __SPH_H__
 #define __SPH_H__
 
+#include "particles.h"
+
 namespace SPH {
 
     enum eBuffers {
@@ -18,16 +20,10 @@ namespace SPH {
         SortedVelocity
     };
 
-    struct sParticleData {
+    struct sData : public Particles::Data {
 
-        // position of each particle
-        float4* position;
-
-        // color of each particle
-        float4* color;
-
-        // current velocity vector
-        float4* velocity;
+        // density at particle position
+        float4* density;
 
         // sum of SPH forces at particle position
         float4* force;
@@ -35,12 +31,9 @@ namespace SPH {
         // pressure at particle position
         float4* pressure;
 
-        // density at particle position
-        float4* density;
     };
 
-
-    typedef struct sParticleData ParticleData;
+    typedef struct sData Data;
     typedef enum eBuffers Buffers;
 }
 

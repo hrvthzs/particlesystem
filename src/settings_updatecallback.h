@@ -5,10 +5,23 @@
 
 namespace Settings {
 
+    /**
+     * Abstract class for handling database value change notifications
+     */
     class UpdateCallback {
 
         public:
+
+            /**
+             *  Destructor
+             */
             virtual ~UpdateCallback() {}
+
+            /**
+             * Value change handler method
+             *
+             * @param type record type
+             */
             virtual void valueChanged(RecordType type) = 0;
 
     };
