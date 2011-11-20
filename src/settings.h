@@ -17,11 +17,24 @@ namespace Settings {
     };
 
     enum RecordType {
-        ParticlesNumber,
-        GridCellSize,
+        BoundaryDistance,
+        BoundaryStiffness,
+        BoundaryDampening,
+        CellSize,
+        GasStiffness,
         GridSize,
+        KineticFriction,
+        ParticleMass,
+        ParticleNumber,
+        ParticleRestDistance,
+        RestDensity,
+        RestPressure,
+        SimulationScale,
+        SmootingLength,
+        StaticFrictionLimit,
         Timestep,
-        VelocityLimit
+        VelocityLimit,
+        Viscosity
     };
 
     typedef struct sRecord Record;

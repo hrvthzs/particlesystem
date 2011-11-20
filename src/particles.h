@@ -23,6 +23,9 @@ namespace Particles {
         // current velocity vector
         float4* velocity;
 
+        // vel_eval (in world space, used for leap-frog integration)
+        float4* veleval;
+
     };
 
 

@@ -73,6 +73,11 @@ namespace Grid {
              */
             void emptyCells();
 
+            /**
+             * Debug information
+             */
+            void printParams();
+
         private:
 
             /**

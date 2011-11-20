@@ -19,7 +19,7 @@ namespace Settings {
 
     ////////////////////////////////////////////////////////////////////////////
 
-    void Database::insert(
+    Database* Database::insert(
         RecordType type,
         string name,
         float minimum,
@@ -37,11 +37,12 @@ namespace Settings {
         record.editable = editable;
 
         this->_settingsMap[type] = record;
+        return this;
     }
 
     ////////////////////////////////////////////////////////////////////////////
 
-    void Database::insert(
+    Database* Database::insert(
         RecordType type,
         string name,
         float minimum,
@@ -49,12 +50,12 @@ namespace Settings {
         float value,
         bool editable
     ) {
-        this->insert(type,name, minimum, maximum, value, "", editable);
+        return this->insert(type,name, minimum, maximum, value, "", editable);
     }
 
     ////////////////////////////////////////////////////////////////////////////
 
-    void Database::insert(
+    Database* Database::insert(
         RecordType type,
         string name,
         float minimum,
@@ -62,28 +63,41 @@ namespace Settings {
         float value,
         string unit
     ) {
-        this->insert(type,name, minimum, maximum, value, unit, true);
+        return this->insert(type,name, minimum, maximum, value, unit, true);
     }
 
     ////////////////////////////////////////////////////////////////////////////
 
-    void Database::updateMinimum(RecordType type, float minimum) {
+    Database* Database::insert(
+        RecordType type,
+        string name,
+        float value,
+        string unit
+    ) {
+        return this->insert(type,name, value, value, value, unit, false);
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+
+    Database* Database::updateMinimum(RecordType type, float minimum) {
         this->_settingsMap[type].minimum = minimum;
+        return this;
     }
 
     ////////////////////////////////////////////////////////////////////////////
 
-    void Database::updateMaximum(RecordType type, float maximum) {
+    Database* Database::updateMaximum(RecordType type, float maximum) {
         this->_settingsMap[type].maximum = maximum;
+        return this;
     }
 
     ////////////////////////////////////////////////////////////////////////////
 
-    void Database::updateValue(RecordType type, float value) {
+    Database* Database::updateValue(RecordType type, float value) {
         if (this->_settingsMap.find(type) == this->_settingsMap.end()) {
             cout << "Warning: SettingsDatabase can't find setting with record "
                  << "with type " << type << endl;
-            return;
+            return this;
         } else {
 
             float old = this->_settingsMap[type].value;
@@ -96,6 +110,7 @@ namespace Settings {
                 }
             }
         }
+        return this;
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -146,6 +161,7 @@ namespace Settings {
         ) {
             record = (Record) it->second;
             cout << left
+                 << setprecision (4)
                  << setw(20) << record.name
                  << setw(10) << record.value
                  << setw(10) << record.minimum

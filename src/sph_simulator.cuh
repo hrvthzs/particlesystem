@@ -35,7 +35,8 @@ namespace SPH {
             float* getPositions();
             void bindBuffers();
             void unbindBuffers();
-            void integrate (int numParticles, float deltaTime, float4* pos);
+
+            void integrate (int numParticles, float deltaTime);
             //virtual Buffer::Vertex<float>* getPositionsBuffer();
 
             void valueChanged(Settings::RecordType type);
@@ -52,9 +53,17 @@ namespace SPH {
             Data _particleData;
             Data _sortedData;
 
+            FluidParams _fluidParams;
+            PrecalcParams _precalcParams;
+
         private:
             void _createBuffers();
             void _orderData();
+            void _updateParams();
+
+            void _step1();
+            void _step2();
+
     };
 
 };

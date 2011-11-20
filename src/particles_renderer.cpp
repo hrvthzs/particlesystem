@@ -12,8 +12,8 @@ namespace Particles {
     Renderer::Renderer(Simulator* simulator) {
         this->_simulator = simulator;
 
-        this->_meshWidth = 128;
-        this->_meshHeight = 128;
+        this->_meshWidth = 8;
+        this->_meshHeight = 8;
         this->_animate = false;
         this->_deltaTime = 0.0;
 

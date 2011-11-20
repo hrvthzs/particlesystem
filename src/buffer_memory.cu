@@ -33,7 +33,7 @@ namespace Buffer {
 
         error_t error = Success;
 
-        if (this->_memory == Device) {
+        /*if (this->_memory == Device) {
             cudaError_t cudaError = cudaBindTexture(
                 0,
                 this->_textureRef,
@@ -46,7 +46,7 @@ namespace Buffer {
 
         if (error == Success) {
             this->_bound = true;
-        }
+        }*/
 
         return error;
     }
@@ -55,12 +55,12 @@ namespace Buffer {
 
     template<class T>
     void Memory<T>::unbind() {
-        if (this->_bound) {
+        /*if (this->_bound) {
             if (this->_memory == Device) {
                 cudaUnbindTexture(this->_textureRef);
             }
             this->_bound = false;
-        }
+        }*/
     }
 
     ///////////////////////////////////////////////////////////////////////////

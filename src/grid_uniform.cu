@@ -140,6 +140,28 @@ namespace Grid {
             this->_numParticles, positions, this->_data
         );
 
+        /*Buffer::Memory<uint>* buffer =
+        new Buffer::Memory<uint>(new Buffer::Allocator(), Buffer::Host);
+
+        Buffer::Memory<float4>* posBuffer =
+            new Buffer::Memory<float4>(new Buffer::Allocator(), Buffer::Host);
+
+        posBuffer->allocate(this->_numParticles);
+        buffer->allocate(this->_numParticles);
+
+        cudaMemcpy(posBuffer->get(), positions, this->_numParticles * sizeof(float4), cudaMemcpyDeviceToHost);
+        cudaMemcpy(buffer->get(), this->_data.hash, this->_numParticles * sizeof(uint), cudaMemcpyDeviceToHost);
+        float4* pos = posBuffer->get();
+        uint* hash = buffer->get();
+
+
+        cutilSafeCall(cutilDeviceSynchronize());
+
+        for (uint i=0;i<this->_numParticles; i++) {
+            std::cout << pos[i].x << " " << pos[i].y << " " << pos[i].z;
+            std::cout << " hash: " << hash[i] << std::endl;
+        }*/
+
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -200,6 +222,7 @@ namespace Grid {
             );
 
         // Copy parameters to GPU's constant memory
+        // declaration of symbol is in grid.cuh
         CUDA_SAFE_CALL(
             cudaMemcpyToSymbol(
                 cudaGridParams,
@@ -208,6 +231,45 @@ namespace Grid {
             )
         );
         CUDA_SAFE_CALL(cudaThreadSynchronize());
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+
+    void Uniform::printParams () {
+        std::cout
+            << "Min["
+            << this->_params.min.x << ", "
+            << this->_params.min.y << ", "
+            << this->_params.min.z << "]"
+            << std::endl;
+
+        std::cout
+            << "Max["
+            << this->_params.max.x << ", "
+            << this->_params.max.y << ", "
+            << this->_params.max.z << "]"
+            << std::endl;
+
+        std::cout
+            << "Size["
+            << this->_params.size.x << ", "
+            << this->_params.size.y << ", "
+            << this->_params.size.z << "]"
+            << std::endl;
+
+        std::cout
+            << "Resolution["
+            << this->_params.resolution.x << ", "
+            << this->_params.resolution.y << ", "
+            << this->_params.resolution.z << "]"
+            << std::endl;
+
+        std::cout
+            << "Delta["
+            << _params.delta.x << ", "
+            << _params.delta.y << ", "
+            << _params.delta.z << "]"
+            << std::endl;
     }
 
     ////////////////////////////////////////////////////////////////////////////

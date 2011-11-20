@@ -36,10 +36,12 @@ namespace Settings {
              * @param name record name
              * @param minimum minimal value for record
              * @param maximum maximal value for record
+             * @param value actual value
              * @param unit unit type (kg, cm, etc.)
              * @param editable if true is read only
+             * @return itself
              */
-            void insert(
+            Database* insert(
                 RecordType type,
                 string name,
                 float minimum,
@@ -56,9 +58,11 @@ namespace Settings {
              * @param name record name
              * @param minimum minimal value for record
              * @param maximum maximal value for record
+             * @param value actual value
              * @param editable if true is read only
+             * @return itself
              */
-            void insert(
+            Database* insert(
                 RecordType type,
                 string name,
                 float minimum,
@@ -74,9 +78,11 @@ namespace Settings {
              * @param name record name
              * @param minimum minimal value for record
              * @param maximum maximal value for record
+             * @param value actual value
              * @param unit unit type (kg, cm, etc.)
+             * @return itself
              */
-            void insert(
+            Database* insert(
                 RecordType type,
                 string name,
                 float minimum,
@@ -85,29 +91,50 @@ namespace Settings {
                 string unit
             );
 
+
+            /**
+             * Insert new record to database
+             * Creates non editable record
+             *
+             * @param type type of record
+             * @param name record name
+             * @param value actual value
+             * @param unit unit type (kg, cm, etc.)
+             * @return itself
+             */
+            Database* insert(
+                RecordType type,
+                string name,
+                float value,
+                string unit = ""
+            );
+
             /**
              * Update minimal value for record
              *
              * @param type type of record
              * @param minimum value
+             * @return itself
              */
-            void updateMinimum(RecordType type, float minimum);
+            Database* updateMinimum(RecordType type, float minimum);
 
             /**
              * Update maximal value for record
              *
              * @param type type of record
              * @param maximum value
+             * @return itself
              */
-            void updateMaximum(RecordType type, float maximum);
+            Database* updateMaximum(RecordType type, float maximum);
 
             /**
              * Update value of record
              *
              * @param type type of record
              * @param value value
+             * @return itself
              */
-            void updateValue(RecordType type, float value);
+            Database* updateValue(RecordType type, float value);
 
             /**
              * Get value of record

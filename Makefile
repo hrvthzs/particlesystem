@@ -48,9 +48,12 @@ CUFILES		:= \
 CU_DEPS		:= \
 	src/grid_utils.cu \
 	src/grid_kernel.cu \
+	src/sph_density.cu \
+	src/sph_force.cu \
 	src/sph_kernel.cu \
 	src/sph_kernels_poly6.cu \
 	src/sph_kernels.cu \
+	src/sph_neighbours.cu \
 
 
 # C/C++ source files (compiled with gcc / c++)
