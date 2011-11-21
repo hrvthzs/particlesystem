@@ -16,6 +16,7 @@ namespace SPH {
                 uint const &index
             ) {
                 C::preProcess(data, index);
+                data.sorted.neighbours[index] = 0.0f;
             }
 
             ////////////////////////////////////////////////////////////////////
@@ -59,6 +60,7 @@ namespace SPH {
                     float rLen = sqrtf(rLenSq);
 
                     if (rLen < cudaFluidParams.smoothingLength) {
+                        data.sorted.neighbours[index] += 1.0f;
                         C::process(data, index, indexN, r, rLen, rLenSq);
                     }
                 }

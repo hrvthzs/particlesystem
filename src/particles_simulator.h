@@ -23,6 +23,8 @@ namespace Particles{
         virtual void unbindBuffers() = 0;
         unsigned int getNumParticles();
 
+        virtual void generateParticles() = 0;
+
         virtual void valueChanged(Settings::RecordType type);
 
     protected:

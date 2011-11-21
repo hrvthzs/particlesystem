@@ -141,24 +141,16 @@ namespace Grid {
         );
 
         /*Buffer::Memory<uint>* buffer =
-        new Buffer::Memory<uint>(new Buffer::Allocator(), Buffer::Host);
+            new Buffer::Memory<uint>(new Buffer::Allocator(), Buffer::Host);
 
-        Buffer::Memory<float4>* posBuffer =
-            new Buffer::Memory<float4>(new Buffer::Allocator(), Buffer::Host);
-
-        posBuffer->allocate(this->_numParticles);
         buffer->allocate(this->_numParticles);
 
-        cudaMemcpy(posBuffer->get(), positions, this->_numParticles * sizeof(float4), cudaMemcpyDeviceToHost);
-        cudaMemcpy(buffer->get(), this->_data.hash, this->_numParticles * sizeof(uint), cudaMemcpyDeviceToHost);
-        float4* pos = posBuffer->get();
+
+        cudaMemcpy(buffer->get(), this->_data.cellStop, this->_numCells * sizeof(uint), cudaMemcpyDeviceToHost);
         uint* hash = buffer->get();
-
-
         cutilSafeCall(cutilDeviceSynchronize());
 
         for (uint i=0;i<this->_numParticles; i++) {
-            std::cout << pos[i].x << " " << pos[i].y << " " << pos[i].z;
             std::cout << " hash: " << hash[i] << std::endl;
         }*/
 
@@ -185,7 +177,9 @@ namespace Grid {
     ////////////////////////////////////////////////////////////////////////////
 
     void Uniform::_calcParams(float cellSize, float gridSize) {
-        this->_params.min = make_float3(-1.0f, -1.0f, -1.0f);
+        float min = -gridSize/2.0f;
+
+        this->_params.min = make_float3(min, min, min);
         this->_params.max =
             make_float3(
                 this->_params.min.x + gridSize,

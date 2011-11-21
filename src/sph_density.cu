@@ -35,6 +35,7 @@ namespace SPH {
                 float const &rLen,
                 float const &rLenSq
             ) {
+
                 data.density +=
                     SPH::Kernels::Poly6::getVariable(
                         cudaPrecalcParams.smoothLenSq, r, rLenSq
@@ -52,7 +53,7 @@ namespace SPH {
                     cudaPrecalcParams.poly6Coeff *
                     data.density;
 
-                density = max(1.0, density);
+                //density = max(1.0, density);
 
                 data.sorted.density[index] = density;
                 data.sorted.pressure[index] =

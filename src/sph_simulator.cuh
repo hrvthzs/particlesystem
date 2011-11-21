@@ -40,6 +40,7 @@ namespace SPH {
             //virtual Buffer::Vertex<float>* getPositionsBuffer();
 
             void valueChanged(Settings::RecordType type);
+            void generateParticles();
 
         protected:
 

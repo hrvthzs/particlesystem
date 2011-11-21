@@ -22,7 +22,13 @@ namespace Grid {
             GridParams const &params
         ) {
             // subtract grid_min (cell position) and multiply by delta
-            return make_int3((position - params.min) * params.delta);
+            float3 cell = (position - params.min) * params.delta;
+
+            return make_int3(
+                ceil(cell.x)-1.0f,
+                ceil(cell.y)-1.0f,
+                ceil(cell.z)-1.0f
+            );
         }
 
         ////////////////////////////////////////////////////////////////////////
@@ -78,6 +84,7 @@ namespace Grid {
             volatile uint cellStart = gridData.cellStart[hash];
 
             if (cellStart != EMPTY_CELL_VALUE) {
+
                 volatile uint cellStop = gridData.cellStop[hash];
 
                 for (uint indexN = cellStart; indexN<cellStop; indexN++) {
@@ -99,10 +106,10 @@ namespace Grid {
             C::preProcess(data, index);
 
             volatile int3 cell = computeCellPosition(position, cudaGridParams);
-
-            for (uint z=cell.z-1; z<cell.z+1; z++) {
-                for (uint y=cell.y-1; y<cell.y+1; y++) {
-                    for (uint x=cell.x-1; x<cell.x+1; x++) {
+            data.sorted.cellPos[index] = make_int3(cell.x, cell.y, cell.z);
+            for (int z=cell.z-1; z<=cell.z+1; z++) {
+                for (int y=cell.y-1; y<=cell.y+1; y++) {
+                    for (int x=cell.x-1; x<=cell.x+1; x++) {
                         iterateCell<C,D>(
                             data,
                             make_int3(x,y,z),

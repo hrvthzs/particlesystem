@@ -67,8 +67,8 @@ namespace SPH {
                     1.0f/3.0f
                 );
             float boundaryDist = 0.5 * particleRestDist;
-            float smoothingLength = 2.0 * particleRestDist;
-            float cellSize = 1.0f/64.0f;
+            float smoothingLength = 0.8;//2.0 * particleRestDist;
+            float cellSize = 2.0/3.0;
                 //smoothingLength * this->_database->selectValue(SimulationScale);
 
         this->_database
@@ -172,20 +172,16 @@ namespace SPH {
         this->_grid->sort();
         this->_orderData();
 
-        /*Buffer::Memory<float>* buffer =
+        Buffer::Memory<float>* buffer =
             new Buffer::Memory<float>(new Buffer::Allocator(), Buffer::Host);
 
         buffer->allocate(this->_numParticles);
 
         GridData gridData = this->_grid->getData();
 
-        cudaMemcpy(buffer->get(), this->_sortedData.density, this->_numParticles * sizeof(float), cudaMemcpyDeviceToHost);
+        cudaMemcpy(buffer->get(), this->_sortedData.neighbours, this->_numParticles * sizeof(float), cudaMemcpyDeviceToHost);
 
         float* e = buffer->get();
-
-        for(uint i=0;i< this->_numParticles; i++) {
-            cout << e[i] << endl;
-        }*/
 
         /*Buffer::Memory<float4>* posBuffer =
             new Buffer::Memory<float4>(new Buffer::Allocator(), Buffer::Host);
@@ -195,16 +191,29 @@ namespace SPH {
         cudaMemcpy(posBuffer->get(), this->_sortedData.position, this->_numParticles * sizeof(float4), cudaMemcpyDeviceToHost);
         float4* pos = posBuffer->get();
 
+        Buffer::Memory<int3>* cellBuffer =
+        new Buffer::Memory<int3>(new Buffer::Allocator(), Buffer::Host);
+
+        cellBuffer->allocate(this->_numParticles);
+
+        cudaMemcpy(cellBuffer->get(), this->_sortedData.cellPos, this->_numParticles * sizeof(int3), cudaMemcpyDeviceToHost);
+        int3* cell = cellBuffer->get();
+        */
         cutilSafeCall(cutilDeviceSynchronize());
 
-        for (uint i=0;i<this->_numParticles; i++) {
-            std::cout << pos[i].x << " " << pos[i].y << " " << pos[i].z << endl;
+        for(uint i=0;i< this->_numParticles; i++) {
+            //cout << e[i] << " " << pos[i].x << " " << pos[i].y << " " << pos[i].z << endl;
+            //cout << e[i] << " " << cell[i].x << " " << cell[i].y << " " << cell[i].z << endl;
+            cout << e[i] << endl;
+            cout << "-----" << endl;
         }
 
         std::cout << "____________________" << std::endl;
-        */
+
+
+
         this->_step1();
-        this->_step2();
+        //this->_step2();
         this->integrate(this->_numParticles, this->_database->selectValue(Timestep));
 
         //cutilSafeCall(cutilDeviceSynchronize());
@@ -215,6 +224,52 @@ namespace SPH {
     void Simulator::valueChanged(Settings::RecordType type) {
         cout << "Value changed: " << type << endl;
     }
+
+    ////////////////////////////////////////////////////////////////////////////
+
+    void Simulator::generateParticles() {
+        this->_bufferManager->bindBuffers();
+
+        this->_bufferManager->memsetBuffers(0);
+
+        Buffer::Memory<float4>* buffer =
+            new Buffer::Memory<float4>(new Buffer::Allocator(), Buffer::Host);
+
+        buffer->allocate(this->_numParticles);
+
+        float4* positions = buffer->get();
+
+        cout << "Generating particles" << endl;
+
+        uint resolution = ceil(pow(this->_numParticles, 1.0/3.0));
+        cout << "Res:" << resolution << endl;
+        for (uint x=0; x<resolution; x++) {
+            for (uint y=0; y<resolution; y++) {
+                for (uint z=0; z<resolution; z++) {
+                    uint index = x + y*resolution + z*resolution*resolution;
+                    if (index < this->_numParticles) {
+                        positions[index].x = 2.0 / resolution * (x+1) - 1.0;
+                        positions[index].y = 2.0 / resolution * (y+1) - 1.0;
+                        positions[index].z = 2.0 / resolution * (z+1) - 1.0;
+                        positions[index].w = 1.0;
+                    }
+                }
+            }
+        }
+
+        cudaMemcpy(
+            this->_particleData.position,
+            positions,
+                this->_numParticles * sizeof(float4),
+                cudaMemcpyHostToDevice
+        );
+
+        cutilSafeCall(cutilDeviceSynchronize());
+
+        this->_bufferManager->unbindBuffers();
+
+    };
+
 
     ////////////////////////////////////////////////////////////////////////////
 
@@ -230,6 +285,8 @@ namespace SPH {
         Buffer::Memory<float>*  pressure = new Buffer::Memory<float>();
         Buffer::Memory<float4>* veleval  = new Buffer::Memory<float4>();
         Buffer::Memory<float4>* velocity = new Buffer::Memory<float4>();
+        Buffer::Memory<float>* neighb    = new Buffer::Memory<float>();
+        Buffer::Memory<int3>* cellPos   = new Buffer::Memory<int3>();
 
         Buffer::Memory<float4>* sColor    = new Buffer::Memory<float4>();
         Buffer::Memory<float>*  sDensity  = new Buffer::Memory<float>();
@@ -238,6 +295,8 @@ namespace SPH {
         Buffer::Memory<float>*  sPressure = new Buffer::Memory<float>();
         Buffer::Memory<float4>* sVeleval  = new Buffer::Memory<float4>();
         Buffer::Memory<float4>* sVelocity = new Buffer::Memory<float4>();
+        Buffer::Memory<float>* sNeighb    = new Buffer::Memory<float>();
+        Buffer::Memory<int3>* sCellPos   = new Buffer::Memory<int3>();
 
         this->_positionsVBO = position->getVBO();
 
@@ -255,7 +314,11 @@ namespace SPH {
             ->addBuffer(SortedPositions,  (Buffer::Abstract<void>*) sPosition)
             ->addBuffer(SortedPressures,  (Buffer::Abstract<void>*) sPressure)
             ->addBuffer(SortedVelevals,   (Buffer::Abstract<void>*) sVeleval)
-            ->addBuffer(SortedVelocities, (Buffer::Abstract<void>*) sVelocity);
+            ->addBuffer(SortedVelocities, (Buffer::Abstract<void>*) sVelocity)
+            ->addBuffer(Neighb,           (Buffer::Abstract<void>*) neighb)
+            ->addBuffer(SortedNeighb,     (Buffer::Abstract<void>*) sNeighb)
+            ->addBuffer(CellPos,          (Buffer::Abstract<void>*) cellPos)
+            ->addBuffer(SortedCellPos,    (Buffer::Abstract<void>*) sCellPos);
 
         this->_bufferManager->allocateBuffers(this->_numParticles);
 
@@ -281,6 +344,8 @@ namespace SPH {
         this->_particleData.pressure = pressure->get();
         this->_particleData.veleval  = veleval->get();
         this->_particleData.velocity = velocity->get();
+        this->_particleData.neighbours = neighb->get();
+        this->_particleData.cellPos = cellPos->get();
 
         this->_sortedData.color    = sColor->get();
         this->_sortedData.density  = sDensity->get();
@@ -289,6 +354,8 @@ namespace SPH {
         this->_sortedData.pressure = sPressure->get();
         this->_sortedData.veleval  = sVeleval->get();
         this->_sortedData.velocity = sVelocity->get();
+        this->_sortedData.neighbours = sNeighb->get();
+        this->_sortedData.cellPos = sCellPos->get();
 
         this->_bufferManager->unbindBuffers();
     }
@@ -357,6 +424,8 @@ namespace SPH {
 
         this->_fluidParams.smoothingLength =
             this->_database->selectValue(SmootingLength);
+
+        cout << "Smooth: " << this->_fluidParams.smoothingLength << endl;
 
         this->_fluidParams.frictionKinetic =
             this->_database->selectValue(KineticFriction);

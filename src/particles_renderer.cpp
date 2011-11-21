@@ -12,8 +12,8 @@ namespace Particles {
     Renderer::Renderer(Simulator* simulator) {
         this->_simulator = simulator;
 
-        this->_meshWidth = 128;
-        this->_meshHeight = 128;
+        this->_numParticles = 27;
+
         this->_animate = false;
         this->_deltaTime = 0.0;
 
@@ -46,9 +46,9 @@ namespace Particles {
             atexit(SDL_Quit);
 
             this->_initSDL(24, 0);
-            this->_simulator->init(this->_meshHeight * this->_meshWidth);
+            this->_simulator->init(this->_numParticles);
             this->_onInit();
-            this->_runCuda();
+            this->_simulator->generateParticles();
             this->_render(10);
 
         } catch(SDL_Exception & ex) {
@@ -237,15 +237,11 @@ namespace Particles {
 
         this->_positionAttribute =
             this->_shaderProgram->getAttributeLocation("position");
+
         this->_pointScale =
             this->_shaderProgram->getUniformLocation("pointScale");
         this->_pointRadius =
             this->_shaderProgram->getUniformLocation("pointRadius");
-
-        cout << this->_positionAttribute << endl;
-        cout << this->_pointScale << endl;
-        cout << this->_pointRadius << endl;
-
         this->_mvpUniform =
             this->_shaderProgram->getUniformLocation("mvp");
         this->_mvUniform =
@@ -346,7 +342,7 @@ namespace Particles {
             (void*) 0
         );
 
-        glDrawArrays(GL_POINTS, 0, this->_meshWidth * this->_meshHeight);
+        glDrawArrays(GL_POINTS, 0, this->_numParticles);
         glDisable(GL_POINT_SPRITE_ARB);
         glDisable(GL_VERTEX_PROGRAM_POINT_SIZE_NV);
         SDL_GL_SwapBuffers();
@@ -369,7 +365,7 @@ namespace Particles {
                 this->_animate = !this->_animate;
                 break;
             case SDLK_c:
-                this->_runCuda();
+                this->_simulator->generateParticles();
                 break;
             default:
                 break;
@@ -491,7 +487,7 @@ namespace Particles {
         // DEPRECATED: cutilSafeCall(cudaGLUnmapBufferObject(vbo));
         cutilSafeCall(cudaGraphicsUnmapResources(1, &vbo_resource, 0));
         */
-        this->_simulator->bindBuffers();
+        /*this->_simulator->bindBuffers();
         float* ptr = this->_simulator->getPositions();
 
         launch_kernel(
@@ -500,7 +496,7 @@ namespace Particles {
                       this->_meshHeight,
                       this->_deltaTime
         );
-        this->_simulator->unbindBuffers();
+        this->_simulator->unbindBuffers();*/
     }
 
     ////////////////////////////////////////////////////////////////////////////

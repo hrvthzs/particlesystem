@@ -19,7 +19,13 @@ namespace SPH {
         SortedPositions,
         SortedPressures,
         SortedVelevals,
-        SortedVelocities
+        SortedVelocities,
+
+        // DEBUG
+        Neighb,
+        SortedNeighb,
+        CellPos,
+        SortedCellPos
     };
 
     struct sData : public Particles::Data {
@@ -32,6 +38,10 @@ namespace SPH {
 
         // pressure at particle position
         float* pressure;
+
+        float *neighbours;
+
+        int3 *cellPos;
 
     };
 

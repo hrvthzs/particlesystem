@@ -91,8 +91,7 @@ namespace Particles {
             GLuint _dataVBO, _dataEBO;
             ParticleSystem* _particleSystem;
 
-            unsigned int _meshWidth;
-            unsigned int _meshHeight;
+            unsigned int _numParticles;
 
             GLuint _vbo;
             bool _animate;
