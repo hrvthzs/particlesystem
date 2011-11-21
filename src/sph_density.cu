@@ -37,7 +37,8 @@ namespace SPH {
             ) {
                 data.density +=
                     SPH::Kernels::Poly6::getVariable(
-                        cudaPrecalcParams.smoothLenSq, r, rLenSq);
+                        cudaPrecalcParams.smoothLenSq, r, rLenSq
+                    );
             }
 
             ////////////////////////////////////////////////////////////////////

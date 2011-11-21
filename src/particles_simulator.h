@@ -14,7 +14,7 @@ namespace Particles{
         Simulator();
         virtual ~Simulator();
 
-        virtual void init() = 0;
+        virtual void init(unsigned int numParticles) = 0;
         virtual void stop() = 0;
         virtual void update() = 0;
         virtual float* getPositions() = 0;

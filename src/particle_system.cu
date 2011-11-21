@@ -69,7 +69,7 @@ struct integrate_functor
             pos = normalize(pos) * 0.99;
             float velL = length(vel);
             vel -= (pos / (len / velL));
-            vel *= boundaryDamping;
+            vel *= -boundaryDamping;
         }
 
         // store new position and velocity

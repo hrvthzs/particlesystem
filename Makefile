@@ -46,6 +46,8 @@ CUFILES		:= \
 
 # CUDA dependency files
 CU_DEPS		:= \
+	src/boundary.cu \
+	src/boundary_walls.cu \
 	src/grid_utils.cu \
 	src/grid_kernel.cu \
 	src/sph_density.cu \

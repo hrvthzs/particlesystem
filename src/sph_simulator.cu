@@ -34,14 +34,10 @@ namespace SPH {
 
     ////////////////////////////////////////////////////////////////////////////
 
-    void Simulator::init() {
-        this->_numParticles = 8*8;
+    void Simulator::init(uint numParticles) {
+        this->_numParticles = numParticles;
 
         this->_createBuffers();
-
-        this->_grid = new Grid::Uniform();
-        this->_grid->allocate(this->_numParticles, 1.0f/128.0f, 1.0f);
-        this->_grid->printParams();
 
 
         // DATABASE
@@ -49,16 +45,16 @@ namespace SPH {
         this->_database->addUpdateCallback(this);
         this->_database
             ->insert(ParticleNumber, "Particles", this->_numParticles)
-            ->insert(GridSize, "Grid size", 256.0)
-            ->insert(Timestep, "Timestep", 0.0f, 1.0f, 0.002f)
+            ->insert(GridSize, "Grid size", 2.0f)
+            ->insert(Timestep, "Timestep", 0.0f, 1.0f, 0.01f)
             ->insert(RestDensity, "Rest density", 0.0f, 10000.0f, 1000.0f)
             ->insert(RestPressure, "Rest pressure", 0.0f, 10000.0f, 0.0f)
             ->insert(GasStiffness, "Gas Stiffness", 0.001f, 10.0f, 1.0f)
             ->insert(Viscosity, "Viscosity", 0.0f, 100.0f, 1.0f)
-            ->insert(BoundaryDampening, "Bound. damp.", 0.0f, 10000.0f, 256.0f)
+            ->insert(BoundaryDampening, "Bound. damp.", 0.0f, 10000.0f, 0.5f)
             ->insert(BoundaryStiffness, "Bound. stiff.", 0.0f, 100000.0f, 20000.0f)
             ->insert(VelocityLimit, "Veloc. limit", 0.0f, 10000.0f, 600.0f)
-            ->insert(SimulationScale, "Sim. scale", 0.0f, 1.0f, 0.01f)
+            ->insert(SimulationScale, "Sim. scale", 0.0f, 1.0f, 1.0f)
             ->insert(KineticFriction, "Kinet. fric.", 0.0f, 10000.0f, 0.0f)
             ->insert(StaticFrictionLimit, "Stat. Fric. Lim.", 0.0f, 10000.0f, 0.0f);
 
@@ -72,8 +68,8 @@ namespace SPH {
                 );
             float boundaryDist = 0.5 * particleRestDist;
             float smoothingLength = 2.0 * particleRestDist;
-            float cellSize =
-                smoothingLength * this->_database->selectValue(SimulationScale);
+            float cellSize = 1.0f/64.0f;
+                //smoothingLength * this->_database->selectValue(SimulationScale);
 
         this->_database
             ->insert(ParticleMass, "Particle mass", particleMass)
@@ -83,6 +79,15 @@ namespace SPH {
             ->insert(CellSize, "Cell size", cellSize);
 
         //this->_database->print();
+
+        this->_grid = new Grid::Uniform();
+        this->_grid->allocate(
+            this->_numParticles,
+            cellSize,
+            this->_database->selectValue(GridSize)
+        );
+        this->_grid->printParams();
+        this->_gridParams = this->_grid->getParams();
 
         this->_updateParams();
 
@@ -150,9 +155,6 @@ namespace SPH {
         minBlockSize = 416;
         Utils::computeGridSize(numParticles, minBlockSize, numBlocks, numThreads);
 
-
-        //this->_particleData.position = (float4*)this->getPositions();
-
         Kernel::integrate<Data><<<numBlocks, numThreads>>>(
             numParticles,
             deltaTime,
@@ -170,22 +172,22 @@ namespace SPH {
         this->_grid->sort();
         this->_orderData();
 
-        Buffer::Memory<uint>* buffer =
-            new Buffer::Memory<uint>(new Buffer::Allocator(), Buffer::Host);
+        /*Buffer::Memory<float>* buffer =
+            new Buffer::Memory<float>(new Buffer::Allocator(), Buffer::Host);
 
         buffer->allocate(this->_numParticles);
 
         GridData gridData = this->_grid->getData();
 
-        cudaMemcpy(buffer->get(), gridData.index, this->_numParticles * sizeof(uint), cudaMemcpyDeviceToHost);
+        cudaMemcpy(buffer->get(), this->_sortedData.density, this->_numParticles * sizeof(float), cudaMemcpyDeviceToHost);
 
-        uint* e = buffer->get();
+        float* e = buffer->get();
 
         for(uint i=0;i< this->_numParticles; i++) {
-            //cout << e[i] << endl;
-        }
+            cout << e[i] << endl;
+        }*/
 
-        Buffer::Memory<float4>* posBuffer =
+        /*Buffer::Memory<float4>* posBuffer =
             new Buffer::Memory<float4>(new Buffer::Allocator(), Buffer::Host);
 
         posBuffer->allocate(this->_numParticles);
@@ -199,9 +201,12 @@ namespace SPH {
             std::cout << pos[i].x << " " << pos[i].y << " " << pos[i].z << endl;
         }
 
-        //this->_step1();
-        //this->_step2();
+        std::cout << "____________________" << std::endl;
+        */
+        this->_step1();
+        this->_step2();
         this->integrate(this->_numParticles, this->_database->selectValue(Timestep));
+
         //cutilSafeCall(cutilDeviceSynchronize());
     }
 
@@ -223,6 +228,7 @@ namespace SPH {
         Buffer::Memory<float4>* force    = new Buffer::Memory<float4>();
         Buffer::Vertex<float4>* position = new Buffer::Vertex<float4>();
         Buffer::Memory<float>*  pressure = new Buffer::Memory<float>();
+        Buffer::Memory<float4>* veleval  = new Buffer::Memory<float4>();
         Buffer::Memory<float4>* velocity = new Buffer::Memory<float4>();
 
         Buffer::Memory<float4>* sColor    = new Buffer::Memory<float4>();
@@ -230,6 +236,7 @@ namespace SPH {
         Buffer::Memory<float4>* sForce    = new Buffer::Memory<float4>();
         Buffer::Vertex<float4>* sPosition = new Buffer::Vertex<float4>();
         Buffer::Memory<float>*  sPressure = new Buffer::Memory<float>();
+        Buffer::Memory<float4>* sVeleval  = new Buffer::Memory<float4>();
         Buffer::Memory<float4>* sVelocity = new Buffer::Memory<float4>();
 
         this->_positionsVBO = position->getVBO();
@@ -240,12 +247,14 @@ namespace SPH {
             ->addBuffer(Forces,           (Buffer::Abstract<void>*) force)
             ->addBuffer(Positions,        (Buffer::Abstract<void>*) position)
             ->addBuffer(Pressures,        (Buffer::Abstract<void>*) pressure)
+            ->addBuffer(Velevals,         (Buffer::Abstract<void>*) veleval)
             ->addBuffer(Velocities,       (Buffer::Abstract<void>*) velocity)
             ->addBuffer(SortedColors,     (Buffer::Abstract<void>*) sColor)
             ->addBuffer(SortedDensities,  (Buffer::Abstract<void>*) sDensity)
             ->addBuffer(SortedForces,     (Buffer::Abstract<void>*) sForce)
             ->addBuffer(SortedPositions,  (Buffer::Abstract<void>*) sPosition)
             ->addBuffer(SortedPressures,  (Buffer::Abstract<void>*) sPressure)
+            ->addBuffer(SortedVelevals,   (Buffer::Abstract<void>*) sVeleval)
             ->addBuffer(SortedVelocities, (Buffer::Abstract<void>*) sVelocity);
 
         this->_bufferManager->allocateBuffers(this->_numParticles);
@@ -270,6 +279,7 @@ namespace SPH {
         this->_particleData.force    = force->get();
         this->_particleData.position = position->get();
         this->_particleData.pressure = pressure->get();
+        this->_particleData.veleval  = veleval->get();
         this->_particleData.velocity = velocity->get();
 
         this->_sortedData.color    = sColor->get();
@@ -277,6 +287,7 @@ namespace SPH {
         this->_sortedData.force    = sForce->get();
         this->_sortedData.position = sPosition->get();
         this->_sortedData.pressure = sPressure->get();
+        this->_sortedData.veleval  = sVeleval->get();
         this->_sortedData.velocity = sVelocity->get();
 
         this->_bufferManager->unbindBuffers();
@@ -365,7 +376,7 @@ namespace SPH {
             Kernels::Spiky::getGradientConstant(smoothLen);
 
         this->_precalcParams.viscosityLapCoeff =
-            Kernels::Spiky::getLaplacianConstant(smoothLen);
+            Kernels::Viscosity::getLaplacianConstant(smoothLen);
 
         this->_precalcParams.pressurePrecalc =
             -0.5 * this->_precalcParams.spikyGradCoeff;
@@ -373,6 +384,29 @@ namespace SPH {
         this->_precalcParams.viscosityPrecalc =
             this->_fluidParams.viscosity *
             this->_precalcParams.viscosityLapCoeff;
+
+        // DEBUG
+        /*
+        cout
+            << "SmoothLen: "
+            << this->_precalcParams.smoothLenSq
+            << endl
+            << "Poly6Coeff: "
+            << this->_precalcParams.poly6Coeff
+            << endl
+            << "SpikyGradCoeff: "
+            << this->_precalcParams.spikyGradCoeff
+            << endl
+            << "ViscosityLapCoeff: "
+            << this->_precalcParams.viscosityLapCoeff
+            << endl
+            << "PressurePrecalc: "
+            << this->_precalcParams.pressurePrecalc
+            << endl
+            << "ViscosityPrecalc: "
+            << this->_precalcParams.viscosityPrecalc
+            << endl;
+        */
 
         // Copy parameters to GPU's constant memory
         // declarations of symbols are in sph_kernel.cu
@@ -389,6 +423,14 @@ namespace SPH {
                 cudaPrecalcParams,
                 &this->_precalcParams,
                 sizeof(PrecalcParams)
+            )
+        );
+
+        CUDA_SAFE_CALL(
+            cudaMemcpyToSymbol(
+                cudaGridParams,
+                &this->_gridParams,
+                sizeof(GridParams)
             )
         );
 

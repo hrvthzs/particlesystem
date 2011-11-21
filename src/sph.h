@@ -11,12 +11,14 @@ namespace SPH {
         Forces,
         Positions,
         Pressures,
+        Velevals,
         Velocities,
         SortedColors,
         SortedDensities,
         SortedForces,
         SortedPositions,
         SortedPressures,
+        SortedVelevals,
         SortedVelocities
     };
 

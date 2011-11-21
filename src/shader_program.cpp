@@ -40,6 +40,10 @@ GLuint ShaderProgram::getUniformLocation (string uniform) {
     return glGetUniformLocation(this->program, uniform.c_str());
 }
 
+GLuint ShaderProgram::getReference() {
+    return this->program;
+}
+
 void ShaderProgram::add(const GLenum type, const char *source) {
     GLuint shader = this->compile(type, this->load(source).c_str());
 

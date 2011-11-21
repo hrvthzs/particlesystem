@@ -12,8 +12,8 @@ namespace Particles {
     Renderer::Renderer(Simulator* simulator) {
         this->_simulator = simulator;
 
-        this->_meshWidth = 8;
-        this->_meshHeight = 8;
+        this->_meshWidth = 128;
+        this->_meshHeight = 128;
         this->_animate = false;
         this->_deltaTime = 0.0;
 
@@ -46,7 +46,7 @@ namespace Particles {
             atexit(SDL_Quit);
 
             this->_initSDL(24, 0);
-            this->_simulator->init();
+            this->_simulator->init(this->_meshHeight * this->_meshWidth);
             this->_onInit();
             this->_runCuda();
             this->_render(10);
@@ -237,9 +237,19 @@ namespace Particles {
 
         this->_positionAttribute =
             this->_shaderProgram->getAttributeLocation("position");
+        this->_pointScale =
+            this->_shaderProgram->getUniformLocation("pointScale");
+        this->_pointRadius =
+            this->_shaderProgram->getUniformLocation("pointRadius");
+
+        cout << this->_positionAttribute << endl;
+        cout << this->_pointScale << endl;
+        cout << this->_pointRadius << endl;
 
         this->_mvpUniform =
             this->_shaderProgram->getUniformLocation("mvp");
+        this->_mvUniform =
+            this->_shaderProgram->getUniformLocation("mv");
 
         /*uint3 gridSize;
         gridSize.x = gridSize.y = gridSize.z = 10;
@@ -281,12 +291,16 @@ namespace Particles {
         glCullFace(GL_BACK);
         glEnable(GL_CULL_FACE);
 
+        glEnable(GL_POINT_SPRITE_ARB);
+        glTexEnvi(GL_POINT_SPRITE_ARB, GL_COORD_REPLACE_ARB, GL_TRUE);
+        glEnable(GL_VERTEX_PROGRAM_POINT_SIZE_NV);
+
         // Calculate ModelViewProjection matrix
         glm::mat4 projection =
             glm::perspective(
                 45.0f,
                 (float) this->_windowWidth / (float) this->_windowHeight,
-                1.0f,
+                0.001f,
                 1000.0f
             );
 
@@ -309,8 +323,16 @@ namespace Particles {
         this->_shaderProgram->use();
 
         // Set matrices
+        glUniformMatrix4fv(this->_mvUniform, 1, GL_FALSE, glm::value_ptr(mv));
         glUniformMatrix4fv(this->_mvpUniform, 1, GL_FALSE, glm::value_ptr(mvp));
         glEnableVertexAttribArray(this->_positionAttribute);
+        glUniform1f(
+            this->_pointScale,
+            this->_windowWidth / tanf(45.0f*0.5f*(float)M_PI/180.0f)
+        );
+
+        //cout << (this->_windowWidth / tanf(45.0f*(float)M_PI/180.0f)) << endl;
+        glUniform1f(this->_pointRadius, 1000.f);
 
         // Draw data
         //glBindBuffer(GL_ARRAY_BUFFER, this->_vbo);
@@ -325,7 +347,8 @@ namespace Particles {
         );
 
         glDrawArrays(GL_POINTS, 0, this->_meshWidth * this->_meshHeight);
-
+        glDisable(GL_POINT_SPRITE_ARB);
+        glDisable(GL_VERTEX_PROGRAM_POINT_SIZE_NV);
         SDL_GL_SwapBuffers();
 
         this->_deltaTime += 0.01f;

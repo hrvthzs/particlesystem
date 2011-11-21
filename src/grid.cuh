@@ -28,12 +28,11 @@
     typedef struct sGridData GridData;
     typedef struct sGridParams GridParams;
 
-    __constant__ GridParams cudaGridParams;
-
     /**
      * If cell is empty in grid this value idicates it
      */
     #define EMPTY_CELL_VALUE 0xffffffff
 
+    __constant__ GridParams  cudaGridParams;
 
 #endif // __GRID_H__

@@ -26,7 +26,7 @@ namespace SPH {
              * else can cause segmentation fault
              * Must be called as first method
              */
-            void init();
+            void init(uint numParticles);
             void stop();
             /**
              *
@@ -55,6 +55,7 @@ namespace SPH {
 
             FluidParams _fluidParams;
             PrecalcParams _precalcParams;
+            GridParams _gridParams;
 
         private:
             void _createBuffers();

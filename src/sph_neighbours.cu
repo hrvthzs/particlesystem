@@ -28,7 +28,7 @@ namespace SPH {
                 float const &rLen,
                 float const &rLenSq
             ) {
-                C::process(index, indexN, r, rLen, rLenSq);
+                C::process(data, index, indexN, r, rLen, rLenSq);
             }
 
             ////////////////////////////////////////////////////////////////////

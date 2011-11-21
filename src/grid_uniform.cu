@@ -185,7 +185,7 @@ namespace Grid {
     ////////////////////////////////////////////////////////////////////////////
 
     void Uniform::_calcParams(float cellSize, float gridSize) {
-        this->_params.min = make_float3(0.0, 0.0, 0.0);
+        this->_params.min = make_float3(-1.0f, -1.0f, -1.0f);
         this->_params.max =
             make_float3(
                 this->_params.min.x + gridSize,
@@ -266,9 +266,14 @@ namespace Grid {
 
         std::cout
             << "Delta["
-            << _params.delta.x << ", "
-            << _params.delta.y << ", "
-            << _params.delta.z << "]"
+            << this->_params.delta.x << ", "
+            << this->_params.delta.y << ", "
+            << this->_params.delta.z << "]"
+            << std::endl;
+
+        std::cout
+            << "Num cells: "
+            << this->_numCells
             << std::endl;
     }
 

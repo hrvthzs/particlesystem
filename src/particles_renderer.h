@@ -72,6 +72,9 @@ namespace Particles {
 
             GLuint _positionAttribute;
             GLuint _mvpUniform;
+            GLuint _mvUniform;
+            GLuint _pointScale;
+            GLuint _pointRadius;
 
             int _windowWidth;
             int _windowHeight;

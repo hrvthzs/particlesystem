@@ -10,6 +10,7 @@ namespace SPH {
         public:
 
             ////////////////////////////////////////////////////////////////////
+
             struct Data {
                 float3 veleval;
                 float density;
@@ -49,9 +50,31 @@ namespace SPH {
                 float const &rLen,
                 float const &rLenSq
             ) {
-                data.density +=
-                    SPH::Kernels::Poly6::getVariable(
-                        cudaPrecalcParams.smoothLenSq, r, rLenSq);
+                data.velevalN  = make_float3(data.sorted.veleval[indexN]);
+                data.densityN  = data.sorted.density[indexN];
+                data.pressureN = data.sorted.pressure[indexN];
+
+                data.pressureForce  +=
+                    (
+                        (data.pressure + data.pressureN) /
+                        (data.densityN * data.density)
+                    ) *
+                    SPH::Kernels::Spiky::getGradientVariable(
+                        cudaFluidParams.smoothingLength,
+                        r,
+                        rLen
+                    );
+
+                data.viscosityForce +=
+                    (
+                        (data.velevalN  - data. velevalN ) /
+                        (data.densityN * data.densityN)
+                    ) *
+                    SPH::Kernels::Viscosity::getLaplacianVariable(
+                        cudaFluidParams.smoothingLength,
+                        r,
+                        rLen
+                    );
             }
 
             ////////////////////////////////////////////////////////////////////
@@ -60,18 +83,19 @@ namespace SPH {
                 Data &data,
                 uint const &index
             ) {
-                float density =
-                    cudaFluidParams.particleMass *
-                    cudaPrecalcParams.poly6Coeff *
-                    data.density;
 
-                density = max(1.0, density);
+                float3 sumForce = (
+                    cudaPrecalcParams.pressurePrecalc *
+                    data.pressureForce +
+                    cudaPrecalcParams.viscosityPrecalc *
+                    data.viscosityForce
+                );
 
-                data.sorted.density[index] = density;
-                data.sorted.pressure[index] =
-                    cudaFluidParams.restPressure +
-                    cudaFluidParams.gasStiffness *
-                    (density - cudaFluidParams.restDensity);
+                // Calculate the force, the particle_mass is added here because
+                // it is constant and thus there is no need for it to
+                // be inside the sum loop.
+                data.sorted.force[index] =
+                    make_float4(sumForce * cudaFluidParams.particleMass, 1.0f);
             }
 
             ////////////////////////////////////////////////////////////////////

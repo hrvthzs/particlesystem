@@ -80,6 +80,9 @@ class ShaderProgram {
          */
         GLuint getUniformLocation (string uniform);
 
+
+        GLuint getReference();
+
     protected:
         /**
          * Add shader
