@@ -71,6 +71,7 @@ namespace Particles {
             SDL_Surface* _SDLSurface;
 
             GLuint _positionAttribute;
+            GLuint _colorAttribute;
             GLuint _mvpUniform;
             GLuint _mvUniform;
             GLuint _pointScale;
@@ -94,6 +95,7 @@ namespace Particles {
             unsigned int _numParticles;
 
             GLuint _vbo;
+            GLuint _colorsVBO;
             bool _animate;
             float _deltaTime;
 

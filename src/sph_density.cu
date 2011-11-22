@@ -53,7 +53,7 @@ namespace SPH {
                     cudaPrecalcParams.poly6Coeff *
                     data.density;
 
-                density = max(1.0, density);
+                density = max(1.0f, density);
 
                 data.sorted.density[index] = density;
                 data.sorted.pressure[index] =

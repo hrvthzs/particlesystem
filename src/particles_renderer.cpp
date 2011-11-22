@@ -12,7 +12,7 @@ namespace Particles {
     Renderer::Renderer(Simulator* simulator) {
         this->_simulator = simulator;
 
-        this->_numParticles = 16300;
+        this->_numParticles = 27*27*27;
 
         this->_animate = false;
         this->_deltaTime = 0.0;
@@ -237,6 +237,8 @@ namespace Particles {
 
         this->_positionAttribute =
             this->_shaderProgram->getAttributeLocation("position");
+        this->_colorAttribute =
+            this->_shaderProgram->getAttributeLocation("color");
 
         this->_pointScale =
             this->_shaderProgram->getUniformLocation("pointScale");
@@ -255,6 +257,8 @@ namespace Particles {
         this->_vbo = this->_particleSystem->getPositionsVBO();
         */
         this->_vbo = this->_simulator->getPositionsVBO();
+
+        this->_colorsVBO = this->_simulator->getColorsVBO();
 
     }
 
@@ -322,16 +326,18 @@ namespace Particles {
         glUniformMatrix4fv(this->_mvUniform, 1, GL_FALSE, glm::value_ptr(mv));
         glUniformMatrix4fv(this->_mvpUniform, 1, GL_FALSE, glm::value_ptr(mvp));
         glEnableVertexAttribArray(this->_positionAttribute);
+        glEnableVertexAttribArray(this->_colorAttribute);
         glUniform1f(
             this->_pointScale,
             this->_windowWidth / tanf(45.0f*0.5f*(float)M_PI/180.0f)
         );
 
         //cout << (this->_windowWidth / tanf(45.0f*(float)M_PI/180.0f)) << endl;
-        glUniform1f(this->_pointRadius, 150.f);
+        glUniform1f(this->_pointRadius, 200.f);
 
+
+        //TODO create VAO for VBOs and attributes
         // Draw data
-        //glBindBuffer(GL_ARRAY_BUFFER, this->_vbo);
         glBindBuffer(GL_ARRAY_BUFFER, this->_vbo);
         glVertexAttribPointer(
             this->_positionAttribute,
@@ -341,6 +347,17 @@ namespace Particles {
             0,
             (void*) 0
         );
+
+        glBindBuffer(GL_ARRAY_BUFFER, this->_colorsVBO);
+        glVertexAttribPointer(
+            this->_colorAttribute,
+            4,
+            GL_FLOAT,
+            GL_FALSE,
+            0,
+            (void*) 0
+        );
+
 
         glDrawArrays(GL_POINTS, 0, this->_numParticles);
         glDisable(GL_POINT_SPRITE_ARB);

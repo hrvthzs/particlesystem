@@ -44,7 +44,7 @@ class Viscosity {
 
         static __device__ __host__
         float getLaplacianVariable(float smoothLen, float3 r, float rLen) {
-            return 1.0 - (rLen / smoothLen);
+            return 1.0f - (rLen / smoothLen);
         }
 
 };

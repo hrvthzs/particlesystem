@@ -33,6 +33,7 @@ namespace SPH {
              */
             void update();
             float* getPositions();
+            float* getColors();
             void bindBuffers();
             void unbindBuffers();
 
