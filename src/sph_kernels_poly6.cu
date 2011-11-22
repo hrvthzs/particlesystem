@@ -23,29 +23,29 @@ class Poly6 {
         }
 
         static __device__ __host__
-        float getGradientVariable(float smoothLenSq, float rLenSq) {
+        float3 getGradientVariable(float smoothLenSq, float3 r, float rLenSq) {
             float variableSquare = smoothLenSq - rLenSq;
-            return variableSquare * variableSquare;
+            return r * (variableSquare * variableSquare);
         }
 
 
         static __device__ __host__
-        float getGradient(float smoothLen, float smoothLenSq, float rLenSq) {
+        float3 getGradient(float smoothLen, float smoothLenSq, float3 r, float rLenSq) {
             return
                 getGradientConstant(smoothLen) *
-                getGradientVariable(smoothLenSq, rLenSq);
+                getGradientVariable(smoothLenSq, r, rLenSq);
         }
 
         static __device__ __host__
         float getLaplacianConstant (float smoothLen) {
-            return -945.0f / (32.0f * M_PI * pow(smoothLen, 9.0f));
+            return 945.0f / (8.0f * M_PI * pow(smoothLen, 9.0f));
         }
 
         static __device__ __host__
         float getLaplacianVariable(float smoothLenSq, float rLenSq) {
             float variableSquare = smoothLenSq - rLenSq;
             return
-                variableSquare * (3*smoothLenSq - 7.0f * rLenSq);
+            variableSquare * (rLenSq - ((3.0/4.0) * variableSquare));
         }
 
 };

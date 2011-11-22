@@ -47,7 +47,7 @@ namespace SPH {
             ->insert(ParticleNumber, "Particles", this->_numParticles)
             ->insert(GridSize, "Grid size", 2.0f)
             ->insert(Timestep, "Timestep", 0.0f, 1.0f, 0.01f)
-            ->insert(RestDensity, "Rest density", 0.0f, 10000.0f, 1000.0f)
+            ->insert(RestDensity, "Rest density", 0.0f, 10000.0f, 200.0f)
             ->insert(RestPressure, "Rest pressure", 0.0f, 10000.0f, 0.0f)
             ->insert(GasStiffness, "Gas Stiffness", 0.001f, 10.0f, 1.0f)
             ->insert(Viscosity, "Viscosity", 0.0f, 100.0f, 1.0f)
@@ -59,7 +59,7 @@ namespace SPH {
             ->insert(StaticFrictionLimit, "Stat. Fric. Lim.", 0.0f, 10000.0f, 0.0f);
 
             float particleMass =
-                ((128.0f * 1024.0f ) / this->_numParticles) * 0.0002f;
+                ((128.0f * 1024.0f ) / this->_numParticles) * 0.00002f * 0.5;
             float particleRestDist =
                 0.87f *
                 pow(
@@ -200,7 +200,7 @@ namespace SPH {
         cudaMemcpy(cellBuffer->get(), this->_sortedData.cellPos, this->_numParticles * sizeof(int3), cudaMemcpyDeviceToHost);
         int3* cell = cellBuffer->get();
         */
-        cutilSafeCall(cutilDeviceSynchronize());
+        //cutilSafeCall(cutilDeviceSynchronize());
 
         /*for(uint i=0;i< this->_numParticles; i++) {
             //cout << e[i] << " " << pos[i].x << " " << pos[i].y << " " << pos[i].z << endl;
@@ -250,7 +250,7 @@ namespace SPH {
                     uint index = x + y*resolution + z*resolution*resolution;
                     if (index < this->_numParticles) {
                         positions[index].x = 2.0 / resolution * (x+1) - 1.0;
-                        positions[index].y = 2.0 / resolution * (y+1) - 1.0;
+                        positions[index].y = 1.0 / resolution * (y+1) - 1.0;
                         positions[index].z = 2.0 / resolution * (z+1) - 1.0;
                         positions[index].w = 1.0;
                     }
@@ -443,13 +443,13 @@ namespace SPH {
             Kernels::Poly6::getConstant(smoothLen);
 
         this->_precalcParams.spikyGradCoeff =
-            1000.0f;//Kernels::Spiky::getGradientConstant(smoothLen);
+            Kernels::Spiky::getGradientConstant(smoothLen);
 
         this->_precalcParams.viscosityLapCoeff =
-            0.0;//Kernels::Viscosity::getLaplacianConstant(smoothLen);
+            Kernels::Viscosity::getLaplacianConstant(smoothLen);
 
         this->_precalcParams.pressurePrecalc =
-            -0.5 * this->_precalcParams.spikyGradCoeff;
+            0.1*this->_precalcParams.spikyGradCoeff;
 
         this->_precalcParams.viscosityPrecalc =
             this->_fluidParams.viscosity *

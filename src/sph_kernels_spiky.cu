@@ -13,7 +13,7 @@ class Spiky {
         static __device__ __host__
         float getVariable(float smoothLen, float3 r, float rLen) {
             float variable = smoothLen - rLen;
-            return variable * variable;
+            return variable * variable * variable;
         }
 
         static __device__ __host__

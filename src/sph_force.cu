@@ -65,6 +65,33 @@ namespace SPH {
                         rLen
                     );
 
+                /*data.pressureForce +=
+                    (
+                        (
+                            data.pressure/
+                            (data.density*data.density)
+                        ) +
+                        (
+                            data.pressureN/
+                            (data.densityN*data.densityN))
+                    ) *
+                    SPH::Kernels::Spiky::getGradientVariable(
+                        cudaFluidParams.smoothingLength,
+                        r,
+                        rLen
+                    );
+                */
+                /*data.pressureForce +=
+                    (
+                        (data.pressure + data.pressureN) /
+                        (2.0f*data.densityN)
+                    ) *
+                    SPH::Kernels::Spiky::getGradientVariable(
+                        cudaFluidParams.smoothingLength,
+                        r,
+                        rLen
+                    );
+                */
                 data.viscosityForce +=
                     (
                         (data.velevalN  - data. velevalN ) /

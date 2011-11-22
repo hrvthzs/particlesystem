@@ -12,7 +12,7 @@ namespace Particles {
     Renderer::Renderer(Simulator* simulator) {
         this->_simulator = simulator;
 
-        this->_numParticles = 27;
+        this->_numParticles = 16300;
 
         this->_animate = false;
         this->_deltaTime = 0.0;
@@ -328,7 +328,7 @@ namespace Particles {
         );
 
         //cout << (this->_windowWidth / tanf(45.0f*(float)M_PI/180.0f)) << endl;
-        glUniform1f(this->_pointRadius, 100.f);
+        glUniform1f(this->_pointRadius, 150.f);
 
         // Draw data
         //glBindBuffer(GL_ARRAY_BUFFER, this->_vbo);
