@@ -40,7 +40,7 @@ namespace SPH {
             float3 pressure = make_float3(sortedData.pressure[index]);
 
             float3 externalForce = make_float3(0.0f, 0.0f, 0.0f);
-            //externalForce.y -= 9.8f;
+            externalForce.y -= 9.8f;
 
             // add no-penetration force due to "walls"
             /*externalForce += Boundary::Walls::calculateWallsNoPenetrationForce(

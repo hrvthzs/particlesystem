@@ -67,8 +67,9 @@ namespace SPH {
                     1.0f/3.0f
                 );
             float boundaryDist = 0.5 * particleRestDist;
-            float smoothingLength = 0.8;//2.0 * particleRestDist;
-            float cellSize = 2.0/3.0;
+            //float smoothingLength = pow(this->_numParticles, 1.0/3.0)*1.2;//2.0 * particleRestDist;
+            float cellSize = 2.0/pow(this->_numParticles, 1.0/3.0);
+            float smoothingLength = cellSize*1.9;//2.0 * particleRestDist;
                 //smoothingLength * this->_database->selectValue(SimulationScale);
 
         this->_database
@@ -172,17 +173,17 @@ namespace SPH {
         this->_grid->sort();
         this->_orderData();
 
-        Buffer::Memory<float>* buffer =
+        /*Buffer::Memory<float>* buffer =
             new Buffer::Memory<float>(new Buffer::Allocator(), Buffer::Host);
 
         buffer->allocate(this->_numParticles);
 
         GridData gridData = this->_grid->getData();
 
-        cudaMemcpy(buffer->get(), this->_sortedData.neighbours, this->_numParticles * sizeof(float), cudaMemcpyDeviceToHost);
+        cudaMemcpy(buffer->get(), this->_sortedData.pressure, this->_numParticles * sizeof(float), cudaMemcpyDeviceToHost);
 
         float* e = buffer->get();
-
+        */
         /*Buffer::Memory<float4>* posBuffer =
             new Buffer::Memory<float4>(new Buffer::Allocator(), Buffer::Host);
 
@@ -201,7 +202,7 @@ namespace SPH {
         */
         cutilSafeCall(cutilDeviceSynchronize());
 
-        for(uint i=0;i< this->_numParticles; i++) {
+        /*for(uint i=0;i< this->_numParticles; i++) {
             //cout << e[i] << " " << pos[i].x << " " << pos[i].y << " " << pos[i].z << endl;
             //cout << e[i] << " " << cell[i].x << " " << cell[i].y << " " << cell[i].z << endl;
             cout << e[i] << endl;
@@ -209,11 +210,11 @@ namespace SPH {
         }
 
         std::cout << "____________________" << std::endl;
-
+        */
 
 
         this->_step1();
-        //this->_step2();
+        this->_step2();
         this->integrate(this->_numParticles, this->_database->selectValue(Timestep));
 
         //cutilSafeCall(cutilDeviceSynchronize());
@@ -442,10 +443,10 @@ namespace SPH {
             Kernels::Poly6::getConstant(smoothLen);
 
         this->_precalcParams.spikyGradCoeff =
-            Kernels::Spiky::getGradientConstant(smoothLen);
+            1000.0f;//Kernels::Spiky::getGradientConstant(smoothLen);
 
         this->_precalcParams.viscosityLapCoeff =
-            Kernels::Viscosity::getLaplacianConstant(smoothLen);
+            0.0;//Kernels::Viscosity::getLaplacianConstant(smoothLen);
 
         this->_precalcParams.pressurePrecalc =
             -0.5 * this->_precalcParams.spikyGradCoeff;
@@ -455,7 +456,7 @@ namespace SPH {
             this->_precalcParams.viscosityLapCoeff;
 
         // DEBUG
-        /*
+
         cout
             << "SmoothLen: "
             << this->_precalcParams.smoothLenSq
@@ -475,7 +476,7 @@ namespace SPH {
             << "ViscosityPrecalc: "
             << this->_precalcParams.viscosityPrecalc
             << endl;
-        */
+
 
         // Copy parameters to GPU's constant memory
         // declarations of symbols are in sph_kernel.cu

@@ -328,7 +328,7 @@ namespace Particles {
         );
 
         //cout << (this->_windowWidth / tanf(45.0f*(float)M_PI/180.0f)) << endl;
-        glUniform1f(this->_pointRadius, 1000.f);
+        glUniform1f(this->_pointRadius, 100.f);
 
         // Draw data
         //glBindBuffer(GL_ARRAY_BUFFER, this->_vbo);
