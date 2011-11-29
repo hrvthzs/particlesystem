@@ -7,18 +7,34 @@ namespace Particles {
     Simulator::Simulator() {
         this->_numParticles = 0;
         this->_positionsVBO = 0;
+
+        // DATABASE
+        this->_database = new Settings::Database();
+        this->_database->addUpdateCallback(this);
     }
 
     ////////////////////////////////////////////////////////////////////////////
 
     Simulator::~Simulator() {
-
+        delete this->_database;
     }
 
     ////////////////////////////////////////////////////////////////////////////
 
     unsigned int Simulator::getNumParticles() {
         return this->_numParticles;
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+
+    void Simulator::setValue(Settings::RecordType record, float value) {
+        this->_database->updateValue(record, value);
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+
+    float Simulator::getValue(Settings::RecordType record) {
+        return this->_database->selectValue(record);
     }
 
     ////////////////////////////////////////////////////////////////////////////

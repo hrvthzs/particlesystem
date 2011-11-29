@@ -97,6 +97,7 @@ namespace Particles {
             GLuint _vbo;
             GLuint _colorsVBO;
             bool _animate;
+            bool _dynamicColoring;
             float _deltaTime;
 
             void _createVBO(

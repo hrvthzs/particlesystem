@@ -4,6 +4,7 @@
 #include <GL/glew.h>
 
 #include "settings.h"
+#include "settings_database.h"
 #include "settings_updatecallback.h"
 
 namespace Particles{
@@ -27,13 +28,19 @@ namespace Particles{
 
         virtual void generateParticles() = 0;
 
+        virtual void setValue(Settings::RecordType record, float value);
+        virtual float getValue(Settings::RecordType record);
+        // abstract method of settings updatecallback
         virtual void valueChanged(Settings::RecordType type);
+
 
     protected:
         unsigned int _numParticles;
 
         GLuint _positionsVBO;
         GLuint _colorsVBO;
+
+        Settings::Database* _database;
 
     };
 };

@@ -21,6 +21,7 @@ namespace Settings {
         BoundaryStiffness,
         BoundaryDampening,
         CellSize,
+        DynamicColoring,
         GasStiffness,
         GridSize,
         KineticFriction,

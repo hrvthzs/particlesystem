@@ -59,7 +59,7 @@ namespace Settings {
              * @param minimum minimal value for record
              * @param maximum maximal value for record
              * @param value actual value
-             * @param editable if true is read only
+             * @param editable if false is read only
              * @return itself
              */
             Database* insert(
@@ -107,6 +107,23 @@ namespace Settings {
                 string name,
                 float value,
                 string unit = ""
+            );
+
+            /**
+             * Insert new record to database
+             * Creates non editable record
+             *
+             * @param type type of record
+             * @param name record name
+             * @param value actual value
+             * @param editable if false is read only
+             * @return itself
+             */
+            Database* insert(
+                RecordType type,
+                string name,
+                float value,
+                bool editable
             );
 
             /**

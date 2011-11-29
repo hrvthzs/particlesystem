@@ -107,7 +107,12 @@ namespace SPH {
             data.velocity[sortedIndex] = make_float4(velocity, 1.0f);
             data.veleval[sortedIndex] = make_float4(veleval, 1.0f);
 
-            data.color[sortedIndex] = make_float4(0.09f, 0.31f, 0.98f, 1.0f);
+            if (cudaFluidParams.dynamicColoring) {
+                float3 color = (position - cudaGridParams.min) / cudaGridParams.size;
+                data.color[sortedIndex] = make_float4(color, 1.0f);
+            }
+
+            //data.color[sortedIndex] = make_float4(0.09f, 0.31f, 0.98f, 1.0f);
         }
 
         ////////////////////////////////////////////////////////////////////////

@@ -29,7 +29,6 @@ namespace SPH {
     Simulator::~Simulator() {
         delete this->_bufferManager;
         delete this->_grid;
-        delete this->_database;
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -41,22 +40,21 @@ namespace SPH {
 
 
         // DATABASE
-        this->_database = new Database();
-        this->_database->addUpdateCallback(this);
         this->_database
             ->insert(ParticleNumber, "Particles", this->_numParticles)
             ->insert(GridSize, "Grid size", 2.0f)
             ->insert(Timestep, "Timestep", 0.0f, 1.0f, 0.01f)
             ->insert(RestDensity, "Rest density", 0.0f, 10000.0f, 2000.0f)
-            ->insert(RestPressure, "Rest pressure", 0.0f, 10000.0f, 0.0f)
+            ->insert(RestPressure, "Rest pressure", 0.0f, 10000.0f, 1000.0f)
             ->insert(GasStiffness, "Gas Stiffness", 0.001f, 10.0f, 1.0f)
-            ->insert(Viscosity, "Viscosity", 0.0f, 100.0f, 10.0f)
+            ->insert(Viscosity, "Viscosity", 0.0f, 100.0f, 1.0f)
             ->insert(BoundaryDampening, "Bound. damp.", 0.0f, 10000.0f, 256.0f)
             ->insert(BoundaryStiffness, "Bound. stiff.", 0.0f, 100000.0f, 20000.0f)
             ->insert(VelocityLimit, "Veloc. limit", 0.0f, 10000.0f, 600.0f)
             ->insert(SimulationScale, "Sim. scale", 0.0f, 1.0f, 1.0f)
             ->insert(KineticFriction, "Kinet. fric.", 0.0f, 10000.0f, 0.0f)
-            ->insert(StaticFrictionLimit, "Stat. Fric. Lim.", 0.0f, 10000.0f, 0.0f);
+            ->insert(StaticFrictionLimit, "Stat. Fric. Lim.", 0.0f, 10000.0f, 0.0f)
+            ->insert(DynamicColoring, "DynamicColoring", 0.0f, true);
 
             uint n = this->_numParticles;
 
@@ -73,7 +71,9 @@ namespace SPH {
             float boundaryDist = 1.5 * particleRestDist;
             //float smoothingLength = pow(this->_numParticles, 1.0/3.0)*1.2;//2.0 * particleRestDist;
             float cellSize = 2.0/pow(this->_numParticles, 1.0/3.0);
-            float smoothingLength = cellSize*1.9;//2.0 * particleRestDist;
+            // maybe 2 x cellSize is the ideal value for smoothing length
+            // but not only if simulation scale is 1
+            float smoothingLength = cellSize*2.0;//2.0 * particleRestDist;
                 //smoothingLength * this->_database->selectValue(SimulationScale);
 
         this->_database
@@ -201,7 +201,7 @@ namespace SPH {
 
         posBuffer->allocate(this->_numParticles);
 
-        cudaMemcpy(posBuffer->get(), this->_particleData.color, this->_numParticles * sizeof(float4), cudaMemcpyDeviceToHost);
+        cudaMemcpy(posBuffer->get(), this->_sortedData.force, this->_numParticles * sizeof(float4), cudaMemcpyDeviceToHost);
         float4* pos = posBuffer->get();
         */
         /*Buffer::Memory<int3>* cellBuffer =
@@ -213,8 +213,8 @@ namespace SPH {
         int3* cell = cellBuffer->get();
         */
         //cutilSafeCall(cutilDeviceSynchronize());
-
-        /*for(uint i=0;i< this->_numParticles; i++) {
+        /*
+        for(uint i=0;i< this->_numParticles; i++) {
             //cout << e[i] << " " << pos[i].x << " " << pos[i].y << " " << pos[i].z << endl;
             cout << pos[i].x << " " << pos[i].y << " " << pos[i].z << endl;
             //cout << e[i] << " " << cell[i].x << " " << cell[i].y << " " << cell[i].z << endl;
@@ -223,9 +223,9 @@ namespace SPH {
         }
 
         std::cout << "____________________" << std::endl;
+
+        }
         */
-
-
         this->_step1();
         this->_step2();
         this->integrate(this->_numParticles, this->_database->selectValue(Timestep));
@@ -237,6 +237,7 @@ namespace SPH {
 
     void Simulator::valueChanged(Settings::RecordType type) {
         cout << "Value changed: " << type << endl;
+        this->_updateParams();
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -246,26 +247,57 @@ namespace SPH {
 
         this->_bufferManager->memsetBuffers(0);
 
-        Buffer::Memory<float4>* buffer =
+        Buffer::Memory<float4>* positionBuffer =
+            new Buffer::Memory<float4>(new Buffer::Allocator(), Buffer::Host);
+        Buffer::Memory<float4>* colorBuffer =
             new Buffer::Memory<float4>(new Buffer::Allocator(), Buffer::Host);
 
-        buffer->allocate(this->_numParticles);
+        positionBuffer->allocate(this->_numParticles);
+        colorBuffer->allocate(this->_numParticles);
 
-        float4* positions = buffer->get();
+        float4* positions = positionBuffer->get();
+        float4* colors = colorBuffer->get();
 
         cout << "Generating particles" << endl;
 
         uint resolution = ceil(pow(this->_numParticles, 1.0/3.0));
-        cout << "Res:" << resolution << endl;
+
+        /*for (uint x=0; x<resolution; x++) {
+            for (uint y=0; y<resolution; y++) {
+                for (uint z=0; z<resolution; z++) {
+                    uint index = x + y*resolution + z*resolution*resolution;
+                    if (index < this->_numParticles) {
+                        positions[index].x = 1.0 / resolution * (x+1) - 0.5;
+                        positions[index].y = 1.0 / resolution * (y+1) - 0.5;
+                        positions[index].z = 1.0 / resolution * (z+1) - 0.5;
+                        positions[index].w = 1.0;
+                    }
+                }
+            }
+        }*/
+
+        GridParams params = this->_grid->getParams();
+
         for (uint x=0; x<resolution; x++) {
             for (uint y=0; y<resolution; y++) {
                 for (uint z=0; z<resolution; z++) {
                     uint index = x + y*resolution + z*resolution*resolution;
                     if (index < this->_numParticles) {
-                        positions[index].x = 1.0 / resolution * (x+1) - 1.0;
+                        positions[index].x = 2.0 / resolution * (x+1) - 1.0;
                         positions[index].y = 2.0 / resolution * (y+1) - 1.0;
-                        positions[index].z = 2.0 / resolution * (z+1) - 1.0;
+                        positions[index].z = 1.0 / resolution * (z+1) - 1.0;
                         positions[index].w = 1.0;
+
+                        if (this->_fluidParams.dynamicColoring)
+                            continue;
+
+                        colors[index].x =
+                            (positions[index].x - params.min.x) / params.size.x;
+                        colors[index].y =
+                            (positions[index].y - params.min.y) / params.size.y;
+                        colors[index].z =
+                            (positions[index].z - params.min.z) / params.size.z;
+                        colors[index].z = 1.0f;
                     }
                 }
             }
@@ -276,6 +308,13 @@ namespace SPH {
             positions,
                 this->_numParticles * sizeof(float4),
                 cudaMemcpyHostToDevice
+        );
+
+        cudaMemcpy(
+            this->_particleData.color,
+            colors,
+            this->_numParticles * sizeof(float4),
+                   cudaMemcpyHostToDevice
         );
 
         cutilSafeCall(cutilDeviceSynchronize());
@@ -435,18 +474,19 @@ namespace SPH {
         this->_fluidParams.scaleToSimulation =
             this->_database->selectValue(SimulationScale);
 
-        cout << "Scale:" << this->_fluidParams.scaleToSimulation << endl;
-
         this->_fluidParams.smoothingLength =
             this->_database->selectValue(SmootingLength);
-
-        cout << "Smooth: " << this->_fluidParams.smoothingLength << endl;
 
         this->_fluidParams.frictionKinetic =
             this->_database->selectValue(KineticFriction);
 
         this->_fluidParams.frictionStaticLimit =
             this->_database->selectValue(StaticFrictionLimit);
+
+        this->_fluidParams.dynamicColoring =
+            this->_database->selectValue(DynamicColoring);
+
+        cout << "DynamicColoring: " << this->_fluidParams.dynamicColoring << endl;
 
         // PRECALCULATED PARAMETERS
         float smoothLen = this->_fluidParams.smoothingLength;

@@ -12,7 +12,7 @@ namespace Particles {
     Renderer::Renderer(Simulator* simulator) {
         this->_simulator = simulator;
 
-        this->_numParticles = 27*27*27;
+        this->_numParticles = 20000;
 
         this->_animate = false;
         this->_deltaTime = 0.0;
@@ -47,6 +47,10 @@ namespace Particles {
 
             this->_initSDL(24, 0);
             this->_simulator->init(this->_numParticles);
+
+            this->_dynamicColoring =
+                this->_simulator->getValue(Settings::DynamicColoring);
+
             this->_onInit();
             this->_simulator->generateParticles();
             this->_render(10);
@@ -333,7 +337,7 @@ namespace Particles {
         );
 
         //cout << (this->_windowWidth / tanf(45.0f*(float)M_PI/180.0f)) << endl;
-        glUniform1f(this->_pointRadius, 200.f);
+        glUniform1f(this->_pointRadius, 50.f);
 
 
         //TODO create VAO for VBOs and attributes
@@ -383,6 +387,13 @@ namespace Particles {
                 break;
             case SDLK_c:
                 this->_simulator->generateParticles();
+                break;
+            case SDLK_d:
+                this->_dynamicColoring = !this->_dynamicColoring;
+                this->_simulator->setValue(
+                    Settings::DynamicColoring,
+                    this->_dynamicColoring
+                );
                 break;
             default:
                 break;

@@ -79,6 +79,17 @@ namespace Settings {
 
     ////////////////////////////////////////////////////////////////////////////
 
+    Database* Database::insert(
+        RecordType type,
+        string name,
+        float value,
+        bool editable
+    ) {
+        return this->insert(type,name, value, value, value, "", editable);
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+
     Database* Database::updateMinimum(RecordType type, float minimum) {
         this->_settingsMap[type].minimum = minimum;
         return this;

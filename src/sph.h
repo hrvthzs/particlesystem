@@ -96,6 +96,8 @@ namespace SPH {
         float frictionStaticLimit;
         float frictionKinetic;
 
+        uint dynamicColoring;
+
     };
 
     typedef struct sData Data;
