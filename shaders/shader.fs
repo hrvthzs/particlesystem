@@ -1,12 +1,38 @@
 #version 150
 
 in vec4 col;
+in vec4 pos;
+in float correction;
 
+uniform vec2 windowSize;
 out vec4 fragColor;
 
 void main()
 {
-    vec4 c = vec4(0.09, 0.31, 0.98, 1.0);
 
-    fragColor = abs(col);
+    vec4 fragPos = gl_FragCoord;
+
+    fragPos.x /= windowSize.x;
+    fragPos.y /= windowSize.y;
+
+    vec4 position = pos / pos.w;
+
+    position.xy *= vec2(0.5, 0.5);
+    position.xy += vec2(0.5, 0.5);
+
+    vec3 N;
+    N.xy = position.xy - fragPos.xy;
+
+    N *= correction;
+    float mag = dot(N.xy, N.xy);
+    if (mag > 1.0) discard; // kill pixels outside circle
+
+    N.z = sqrt(1.0 - mag);
+    const vec3 lightDir = vec3(0.577, 0.577, 0.577);
+    // calculate lighting
+    float diffuse = max(0.0, dot(lightDir, N));
+
+    fragColor = col * diffuse;
 }
+
+

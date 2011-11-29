@@ -45,7 +45,7 @@ namespace SPH {
             ->insert(GridSize, "Grid size", 2.0f)
             ->insert(Timestep, "Timestep", 0.0f, 1.0f, 0.01f)
             ->insert(RestDensity, "Rest density", 0.0f, 10000.0f, 2000.0f)
-            ->insert(RestPressure, "Rest pressure", 0.0f, 10000.0f, 1000.0f)
+            ->insert(RestPressure, "Rest pressure", 0.0f, 10000.0f, 500.0f)
             ->insert(GasStiffness, "Gas Stiffness", 0.001f, 10.0f, 1.0f)
             ->insert(Viscosity, "Viscosity", 0.0f, 100.0f, 1.0f)
             ->insert(BoundaryDampening, "Bound. damp.", 0.0f, 10000.0f, 256.0f)
@@ -73,7 +73,7 @@ namespace SPH {
             float cellSize = 2.0/pow(this->_numParticles, 1.0/3.0);
             // maybe 2 x cellSize is the ideal value for smoothing length
             // but not only if simulation scale is 1
-            float smoothingLength = cellSize*2.0;//2.0 * particleRestDist;
+            float smoothingLength = cellSize*1.9;//2.0 * particleRestDist;
                 //smoothingLength * this->_database->selectValue(SimulationScale);
 
         this->_database
@@ -185,16 +185,16 @@ namespace SPH {
         this->_grid->sort();
         this->_orderData();
 
-        /*Buffer::Memory<float>* buffer =
+        Buffer::Memory<float>* buffer =
             new Buffer::Memory<float>(new Buffer::Allocator(), Buffer::Host);
 
         buffer->allocate(this->_numParticles);
 
         GridData gridData = this->_grid->getData();
 
-        cudaMemcpy(buffer->get(), this->_sortedData.pressure, this->_numParticles * sizeof(float), cudaMemcpyDeviceToHost);
+        cudaMemcpy(buffer->get(), this->_sortedData.neighbours, this->_numParticles * sizeof(float), cudaMemcpyDeviceToHost);
 
-        float* e = buffer->get();*/
+        float* e = buffer->get();
 
         /*Buffer::Memory<float4>* posBuffer =
             new Buffer::Memory<float4>(new Buffer::Allocator(), Buffer::Host);
@@ -213,19 +213,21 @@ namespace SPH {
         int3* cell = cellBuffer->get();
         */
         //cutilSafeCall(cutilDeviceSynchronize());
-        /*
+        /*int c = 0;
         for(uint i=0;i< this->_numParticles; i++) {
             //cout << e[i] << " " << pos[i].x << " " << pos[i].y << " " << pos[i].z << endl;
-            cout << pos[i].x << " " << pos[i].y << " " << pos[i].z << endl;
+            //cout << pos[i].x << " " << pos[i].y << " " << pos[i].z << endl;
             //cout << e[i] << " " << cell[i].x << " " << cell[i].y << " " << cell[i].z << endl;
             //cout << e[i] << endl;
+            if (e[i] < 18) c++;
             //cout << "-----" << endl;
-        }
+        }*/
 
-        std::cout << "____________________" << std::endl;
+        //std::cout << "____________________" << std::endl;
+        //std::cout << c << std::endl;
 
-        }
-        */
+
+
         this->_step1();
         this->_step2();
         this->integrate(this->_numParticles, this->_database->selectValue(Timestep));

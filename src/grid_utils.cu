@@ -92,7 +92,7 @@ namespace Grid {
                 }
 
                 // debug
-                //data.sorted.neighbours[index] += 1.0f;
+                data.sorted.neighbours[index] += 1.0f;
             }
         }
 
@@ -109,7 +109,7 @@ namespace Grid {
             C::preProcess(data, index);
 
             // debug
-            //data.sorted.neighbours[index] = 0.0f;
+            data.sorted.neighbours[index] = 0.0f;
 
             volatile int3 cell = computeCellPosition(position, cudaGridParams);
             data.sorted.cellPos[index] = make_int3(cell.x, cell.y, cell.z);

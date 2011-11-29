@@ -12,7 +12,7 @@ namespace Particles {
     Renderer::Renderer(Simulator* simulator) {
         this->_simulator = simulator;
 
-        this->_numParticles = 20000;
+        this->_numParticles = 15000;
 
         this->_animate = false;
         this->_deltaTime = 0.0;
@@ -252,6 +252,8 @@ namespace Particles {
             this->_shaderProgram->getUniformLocation("mvp");
         this->_mvUniform =
             this->_shaderProgram->getUniformLocation("mv");
+        this->_windowUniform =
+            this->_shaderProgram->getUniformLocation("windowSize");
 
         /*uint3 gridSize;
         gridSize.x = gridSize.y = gridSize.z = 10;
@@ -295,9 +297,7 @@ namespace Particles {
         glCullFace(GL_BACK);
         glEnable(GL_CULL_FACE);
 
-        glEnable(GL_POINT_SPRITE_ARB);
-        glTexEnvi(GL_POINT_SPRITE_ARB, GL_COORD_REPLACE_ARB, GL_TRUE);
-        glEnable(GL_VERTEX_PROGRAM_POINT_SIZE_NV);
+        glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
 
         // Calculate ModelViewProjection matrix
         glm::mat4 projection =
@@ -335,9 +335,12 @@ namespace Particles {
             this->_pointScale,
             this->_windowWidth / tanf(45.0f*0.5f*(float)M_PI/180.0f)
         );
-
-        //cout << (this->_windowWidth / tanf(45.0f*(float)M_PI/180.0f)) << endl;
         glUniform1f(this->_pointRadius, 50.f);
+
+        glm::vec2 windowSize =
+            glm::vec2(this->_windowWidth, this->_windowHeight);
+
+        glUniform2fv(this->_windowUniform, 1, glm::value_ptr(windowSize));
 
 
         //TODO create VAO for VBOs and attributes
