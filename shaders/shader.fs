@@ -23,7 +23,7 @@ void main()
 
     vec3 N;
     N.xy = position.xy - fragPos.xy;
-
+    N.z = 0.0;
     N *= correction;
     N.y /= aspectRatio;
     float mag = dot(N.xy, N.xy);
