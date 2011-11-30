@@ -5,6 +5,7 @@ in vec4 pos;
 in float correction;
 
 uniform vec2 windowSize;
+uniform float aspectRatio;
 out vec4 fragColor;
 
 void main()
@@ -24,6 +25,7 @@ void main()
     N.xy = position.xy - fragPos.xy;
 
     N *= correction;
+    N.y /= aspectRatio;
     float mag = dot(N.xy, N.xy);
     if (mag > 1.0) discard; // kill pixels outside circle
 

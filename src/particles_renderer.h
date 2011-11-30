@@ -76,11 +76,13 @@ namespace Particles {
             GLuint _mvUniform;
             // window dimensions x -> width, y -> height
             GLuint _windowUniform;
+            GLuint _aspectRatioUniform;
             GLuint _pointScale;
             GLuint _pointRadius;
 
             int _windowWidth;
             int _windowHeight;
+            float _aspectRatio;
 
             unsigned _colorBits;
 

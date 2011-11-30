@@ -12,7 +12,7 @@ namespace Particles {
     Renderer::Renderer(Simulator* simulator) {
         this->_simulator = simulator;
 
-        this->_numParticles = 15000;
+        this->_numParticles = 20000;
 
         this->_animate = false;
         this->_deltaTime = 0.0;
@@ -23,6 +23,8 @@ namespace Particles {
 
         this->_windowHeight = 600;
         this->_windowWidth = 800;
+        this->_aspectRatio =
+            (float) this->_windowWidth / this->_windowHeight;
         this->_colorBits = 24;
         this->_SDLSurface = NULL;
 
@@ -254,6 +256,9 @@ namespace Particles {
             this->_shaderProgram->getUniformLocation("mv");
         this->_windowUniform =
             this->_shaderProgram->getUniformLocation("windowSize");
+        this->_aspectRatioUniform =
+            this->_shaderProgram->getUniformLocation("aspectRatio");
+
 
         /*uint3 gridSize;
         gridSize.x = gridSize.y = gridSize.z = 10;
@@ -274,6 +279,7 @@ namespace Particles {
         glViewport(0, 0, width, height);
         this->_windowWidth = width;
         this->_windowHeight = height;
+        this->_aspectRatio = (float) width / height;
 
         this->_createSDLSurface();
     }
@@ -301,12 +307,7 @@ namespace Particles {
 
         // Calculate ModelViewProjection matrix
         glm::mat4 projection =
-            glm::perspective(
-                45.0f,
-                (float) this->_windowWidth / (float) this->_windowHeight,
-                0.001f,
-                1000.0f
-            );
+            glm::perspective(45.0f, this->_aspectRatio, 0.0001f, 1000.0f);
 
         glm::mat4 mv = glm::rotate(
             glm::rotate(
@@ -336,6 +337,7 @@ namespace Particles {
             this->_windowWidth / tanf(45.0f*0.5f*(float)M_PI/180.0f)
         );
         glUniform1f(this->_pointRadius, 50.f);
+        glUniform1f(this->_aspectRatioUniform, this->_aspectRatio);
 
         glm::vec2 windowSize =
             glm::vec2(this->_windowWidth, this->_windowHeight);
