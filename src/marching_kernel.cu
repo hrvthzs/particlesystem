@@ -20,6 +20,13 @@ namespace Marching {
             int3 cell,
             GridData &gridData
         ) {
+            if (cell.x >= cudaGridParams.resolution.x ||
+                cell.y >= cudaGridParams.resolution.y ||
+                cell.z >= cudaGridParams.resolution.z
+            ) {
+                return 0.0f;
+            }
+
             volatile uint hash = Utils::computeCellHash(cell, cudaGridParams);
             volatile uint cellStart = gridData.cellStart[hash];
 

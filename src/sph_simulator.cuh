@@ -41,6 +41,7 @@ namespace SPH {
 
             void valueChanged(Settings::RecordType type);
             void generateParticles();
+            uint getNumVertices();
 
         protected:
 

@@ -12,7 +12,7 @@ namespace Particles {
     Renderer::Renderer(Simulator* simulator) {
         this->_simulator = simulator;
 
-        this->_numParticles = 1;
+        this->_numParticles = 2;
 
         this->_animate = false;
         this->_deltaTime = 0.0;
@@ -239,7 +239,7 @@ namespace Particles {
 
     void Renderer::_onInit() {
         this->_shaderProgram =
-            new ShaderProgram("shaders/shader.vs", "shaders/shader.fs");
+            new ShaderProgram("shaders/marching.vs", "shaders/marching.fs");
 
         this->_positionAttribute =
             this->_shaderProgram->getAttributeLocation("position");
@@ -256,10 +256,14 @@ namespace Particles {
             this->_shaderProgram->getUniformLocation("mvp");
         this->_mvUniform =
             this->_shaderProgram->getUniformLocation("mv");
+        this->_mnUniform =
+            this->_shaderProgram->getUniformLocation("mn");
         this->_windowUniform =
             this->_shaderProgram->getUniformLocation("windowSize");
         this->_aspectRatioUniform =
             this->_shaderProgram->getUniformLocation("aspectRatio");
+        this->_lightUniform =
+            this->_shaderProgram->getUniformLocation("lightPosition");
 
 
         /*uint3 gridSize;
@@ -270,7 +274,7 @@ namespace Particles {
         this->_vbo = this->_particleSystem->getPositionsVBO();
         */
         this->_positionsVBO = this->_simulator->getPositionsVBO();
-
+        this->_normalsVBO = this->_simulator->getNormalsVBO();
         this->_colorsVBO = this->_simulator->getColorsVBO();
 
     }
@@ -324,6 +328,18 @@ namespace Particles {
             glm::vec3(0, 1, 0)
         );
 
+        glm::mat3 mn = glm::mat3(
+            glm::rotate(
+                glm::rotate(
+                    glm::mat4(1.0f),
+                    this->_rotationY,
+                    glm::vec3(1, 0, 0)
+                ),
+                this->_rotationX,
+                glm::vec3(0, 1, 0)
+            )
+        );
+
         glm::mat4 mvp = projection*mv;
 
 
@@ -332,6 +348,9 @@ namespace Particles {
         // Set matrices
         glUniformMatrix4fv(this->_mvUniform, 1, GL_FALSE, glm::value_ptr(mv));
         glUniformMatrix4fv(this->_mvpUniform, 1, GL_FALSE, glm::value_ptr(mvp));
+        glUniformMatrix3fv(this->_mnUniform, 1, GL_FALSE, glm::value_ptr(mn));
+
+        glUniform3f(this->_lightUniform, 0.0f, 2.0f, 0.0f);
 
         glEnableVertexAttribArray(this->_positionAttribute);
         glEnableVertexAttribArray(this->_colorAttribute);
@@ -383,7 +402,7 @@ namespace Particles {
         );
 
 
-        glDrawArrays(GL_TRIANGLES, 0, 24);
+        glDrawArrays(GL_TRIANGLES, 0, this->_simulator->getNumVertices());
         glDisable(GL_POINT_SPRITE_ARB);
         glDisable(GL_VERTEX_PROGRAM_POINT_SIZE_NV);
         SDL_GL_SwapBuffers();

@@ -41,7 +41,7 @@ namespace SPH {
         this->_database
             ->insert(ParticleNumber, "Particles", this->_numParticles)
             ->insert(GridSize, "Grid size", 5.0f)
-            ->insert(Timestep, "Timestep", 0.0f, 1.0f, 0.01f)
+            ->insert(Timestep, "Timestep", 0.0f, 1.0f, 0.001f)
             ->insert(RestDensity, "Rest density", 0.0f, 10000.0f, 2000.0f)
             ->insert(RestPressure, "Rest pressure", 0.0f, 10000.0f, 0.0f)
             ->insert(GasStiffness, "Gas Stiffness", 0.001f, 10.0f, 1.0f)
@@ -100,7 +100,9 @@ namespace SPH {
         this->_createBuffers();
 
         this->_marchingRenderer = new Marching::Renderer(this->_grid);
+
         this->_positionsVBO = this->_marchingRenderer->getPositionsVBO();
+        this->_normalsVBO = this->_marchingRenderer->getNormalsVBO();
 
 
 
@@ -242,7 +244,7 @@ namespace SPH {
         */
         this->_step1();
         this->_step2();
-        //this->_integrate(this->_database->selectValue(Timestep));
+        this->_integrate(this->_database->selectValue(Timestep));
 
 
 
@@ -322,11 +324,11 @@ namespace SPH {
             }
         }
 
-        positions[0].x = 0.0f;
+        /*positions[0].x = 0.0f;
         positions[0].y = 0.0f;
         positions[0].z = 0.0f;
 
-        /*positions[0].x = 1.0 / 5.0f;
+        positions[0].x = 1.0 / 5.0f;
         positions[0].y = 1.0 / 5.0f;
         positions[0].z = 1.0 / 5.0f;
         */
@@ -351,6 +353,11 @@ namespace SPH {
 
     };
 
+    ////////////////////////////////////////////////////////////////////////////
+
+    uint Simulator::getNumVertices() {
+        return this->_marchingRenderer->getNumVertices();
+    }
 
     ////////////////////////////////////////////////////////////////////////////
 

@@ -68,6 +68,7 @@ namespace Particles {
 
             Simulator* _simulator;
             ShaderProgram* _shaderProgram;
+            ShaderProgram* _marchingProgram;
             SDL_Surface* _SDLSurface;
 
             GLuint _positionAttribute;
@@ -75,11 +76,14 @@ namespace Particles {
             GLuint _colorAttribute;
             GLuint _mvpUniform;
             GLuint _mvUniform;
+            GLuint _mnUniform;
             // window dimensions x -> width, y -> height
             GLuint _windowUniform;
             GLuint _aspectRatioUniform;
+            GLuint _lightUniform;
             GLuint _pointScale;
             GLuint _pointRadius;
+
 
             int _windowWidth;
             int _windowHeight;

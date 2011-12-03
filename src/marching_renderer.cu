@@ -83,9 +83,9 @@ namespace Marching {
             activeVoxels = lastElement + lastScanElement;
         }
 
-        cout << "Active voxels:" << activeVoxels << endl;
+        //cout << "Active voxels:" << activeVoxels << endl;
 
-        if (activeVoxels==0) {
+        if (activeVoxels == 0) {
             // return if there are no full voxels
             this->_numVertices = 0;
             return;
@@ -125,7 +125,7 @@ namespace Marching {
 
         }
 
-        cout << "Num vertices:" << this->_numVertices << endl;
+        //cout << "Num vertices:" << this->_numVertices << endl;
 
         gridDim.x = (int) ceil(activeVoxels / (float) 32);
         gridDim.y = 1;
@@ -146,6 +146,8 @@ namespace Marching {
             this->_gridParams.cellSize
         );
 
+        cutilSafeCall(cutilDeviceSynchronize());
+
         /*Buffer::Memory<uint>* buffer =
             new Buffer::Memory<uint>(new Buffer::Allocator(), Buffer::Host);
 
@@ -165,7 +167,7 @@ namespace Marching {
         cout << "______" << endl;
         */
 
-        Buffer::Memory<float4>* buffer =
+        /*Buffer::Memory<float4>* buffer =
         new Buffer::Memory<float4>(new Buffer::Allocator(), Buffer::Host);
 
         buffer->allocate(this->_maxVertices);
@@ -173,16 +175,16 @@ namespace Marching {
 
         cudaMemcpy(
             buffer->get(),
-                   this->_vertexData.positions,
+                   this->_vertexData.normals,
                    this->_numVertices * sizeof(float4),
                    cudaMemcpyDeviceToHost
         );
-
-        for(uint i=0;i<this->_numVertices; i++) {
+        */
+        /*for(uint i=0;i<this->_numVertices; i++) {
             cout << p[i].x << ", " << p[i].y << ", " << p[i].z << "," << p[i].w << endl;
         }
         cout << "______" << endl;
-
+        */
     }
 
     ////////////////////////////////////////////////////////////////////////////

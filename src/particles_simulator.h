@@ -21,7 +21,9 @@ namespace Particles{
         virtual float* getPositions() = 0;
         virtual float* getColors() = 0;
         virtual GLuint getPositionsVBO();
+        virtual GLuint getNormalsVBO();
         virtual GLuint getColorsVBO();
+        virtual uint getNumVertices() = 0;
         virtual void bindBuffers() = 0;
         virtual void unbindBuffers() = 0;
         unsigned int getNumParticles();
@@ -38,6 +40,7 @@ namespace Particles{
         unsigned int _numParticles;
 
         GLuint _positionsVBO;
+        GLuint _normalsVBO;
         GLuint _colorsVBO;
 
         Settings::Database* _database;
