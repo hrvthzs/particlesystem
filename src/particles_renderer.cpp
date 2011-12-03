@@ -12,7 +12,7 @@ namespace Particles {
     Renderer::Renderer(Simulator* simulator) {
         this->_simulator = simulator;
 
-        this->_numParticles = 15000;
+        this->_numParticles = 1;
 
         this->_animate = false;
         this->_deltaTime = 0.0;
@@ -243,6 +243,8 @@ namespace Particles {
 
         this->_positionAttribute =
             this->_shaderProgram->getAttributeLocation("position");
+        this->_normalAttribute =
+            this->_shaderProgram->getAttributeLocation("normal");
         this->_colorAttribute =
             this->_shaderProgram->getAttributeLocation("color");
 
@@ -267,7 +269,7 @@ namespace Particles {
             new ParticleSystem(this->_meshWidth * this->_meshHeight, gridSize);
         this->_vbo = this->_particleSystem->getPositionsVBO();
         */
-        this->_vbo = this->_simulator->getPositionsVBO();
+        this->_positionsVBO = this->_simulator->getPositionsVBO();
 
         this->_colorsVBO = this->_simulator->getColorsVBO();
 
@@ -330,8 +332,11 @@ namespace Particles {
         // Set matrices
         glUniformMatrix4fv(this->_mvUniform, 1, GL_FALSE, glm::value_ptr(mv));
         glUniformMatrix4fv(this->_mvpUniform, 1, GL_FALSE, glm::value_ptr(mvp));
+
         glEnableVertexAttribArray(this->_positionAttribute);
         glEnableVertexAttribArray(this->_colorAttribute);
+        glEnableVertexAttribArray(this->_normalAttribute);
+
         glUniform1f(
             this->_pointScale,
             this->_windowWidth / tanf(45.0f*0.5f*(float)M_PI/180.0f)
@@ -347,9 +352,19 @@ namespace Particles {
 
         //TODO create VAO for VBOs and attributes
         // Draw data
-        glBindBuffer(GL_ARRAY_BUFFER, this->_vbo);
+        glBindBuffer(GL_ARRAY_BUFFER, this->_positionsVBO);
         glVertexAttribPointer(
             this->_positionAttribute,
+            4,
+            GL_FLOAT,
+            GL_FALSE,
+            0,
+            (void*) 0
+        );
+
+        glBindBuffer(GL_ARRAY_BUFFER, this->_normalsVBO);
+        glVertexAttribPointer(
+            this->_normalAttribute,
             4,
             GL_FLOAT,
             GL_FALSE,
@@ -368,7 +383,7 @@ namespace Particles {
         );
 
 
-        glDrawArrays(GL_POINTS, 0, this->_numParticles);
+        glDrawArrays(GL_TRIANGLES, 0, 24);
         glDisable(GL_POINT_SPRITE_ARB);
         glDisable(GL_VERTEX_PROGRAM_POINT_SIZE_NV);
         SDL_GL_SwapBuffers();

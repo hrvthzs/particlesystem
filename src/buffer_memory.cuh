@@ -60,6 +60,26 @@ namespace Buffer {
             virtual void allocate(size_t size);
 
             /**
+             * Copies from the memory area pointed
+             * to by buffer to the memory area pointed to by dst
+             * @see cudaMemcpy
+             *
+             * @param dst destination memory address
+             * @param memory target memory type
+             */
+            virtual void copyTo(void* dst, memory_t memory);
+
+            /**
+             * Copies from the memory area pointed
+             * to by buffer to the memory area pointed to by dst
+             * @see cudaMemcpy
+             *
+             * @param dst source memory address
+             * @param memory source memory type
+             */
+            virtual void copyFrom(void* src, memory_t memory);
+
+            /**
              * Free buffer from memory
              */
             virtual void free();
@@ -71,6 +91,16 @@ namespace Buffer {
              */
             void _init(Allocator* allocator, memory_t memory);
 
+            /**
+             * Copies from one memory to another
+             *
+             * @param src source memory
+             * @param dst destination memory
+             * @param srcMem source memory location
+             * @param dstMem  destination memory location
+             */
+            void _copy(void* src, void* dst, memory_t srcMem, memory_t dstMem);
+
             // allocator instance
             Allocator* _allocator;
 
@@ -79,6 +109,7 @@ namespace Buffer {
 
             // texture reference
             texture<T, cudaTextureType1D, cudaReadModeElementType> _textureRef;
+
     };
 };
 

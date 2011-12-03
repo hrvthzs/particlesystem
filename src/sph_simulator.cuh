@@ -5,6 +5,7 @@
 #include "buffer_manager.cuh"
 #include "buffer_vertex.h"
 #include "grid_uniform.cuh"
+#include "marching_renderer.cuh"
 #include "particles_simulator.h"
 #include "settings.h"
 #include "settings_database.h"
@@ -36,8 +37,6 @@ namespace SPH {
             float* getColors();
             void bindBuffers();
             void unbindBuffers();
-
-            void integrate (int numParticles, float deltaTime);
             //virtual Buffer::Vertex<float>* getPositionsBuffer();
 
             void valueChanged(Settings::RecordType type);
@@ -47,6 +46,7 @@ namespace SPH {
 
 
             Buffer::Manager<Buffers> *_bufferManager;
+
             Buffer::Vertex<float4>* _positionsBuffer;
 
             Grid::Uniform* _grid;
@@ -58,7 +58,10 @@ namespace SPH {
             PrecalcParams _precalcParams;
             GridParams _gridParams;
 
+            Marching::Renderer* _marchingRenderer;
+
         private:
+            void _integrate (float deltaTime);
             void _createBuffers();
             void _orderData();
             void _updateParams();

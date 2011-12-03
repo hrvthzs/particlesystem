@@ -29,6 +29,7 @@ namespace SPH {
     Simulator::~Simulator() {
         delete this->_bufferManager;
         delete this->_grid;
+        delete this->_marchingRenderer;
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -36,13 +37,10 @@ namespace SPH {
     void Simulator::init(uint numParticles) {
         this->_numParticles = numParticles;
 
-        this->_createBuffers();
-
-
         // DATABASE
         this->_database
             ->insert(ParticleNumber, "Particles", this->_numParticles)
-            ->insert(GridSize, "Grid size", 2.0f)
+            ->insert(GridSize, "Grid size", 5.0f)
             ->insert(Timestep, "Timestep", 0.0f, 1.0f, 0.01f)
             ->insert(RestDensity, "Rest density", 0.0f, 10000.0f, 2000.0f)
             ->insert(RestPressure, "Rest pressure", 0.0f, 10000.0f, 0.0f)
@@ -70,7 +68,8 @@ namespace SPH {
                 );
             float boundaryDist = 1.5 * particleRestDist;
             //float smoothingLength = pow(this->_numParticles, 1.0/3.0)*1.2;//2.0 * particleRestDist;
-            float cellSize = 2.0/pow(this->_numParticles, 1.0/3.0);
+            //float cellSize = 2.0/pow(this->_numParticles, 1.0/3.0);
+            float cellSize = 1.0;
             // maybe 2 x cellSize is the ideal value for smoothing length
             // but not only if simulation scale is 1
             float smoothingLength = cellSize*1.9;//2.0 * particleRestDist;
@@ -98,6 +97,11 @@ namespace SPH {
 
         this->_updateParams();
 
+        this->_createBuffers();
+
+        this->_marchingRenderer = new Marching::Renderer(this->_grid);
+        this->_positionsVBO = this->_marchingRenderer->getPositionsVBO();
+
 
 
     }
@@ -106,6 +110,7 @@ namespace SPH {
 
     void Simulator::stop() {
         this->_bufferManager->freeBuffers();
+        this->_marchingRenderer->freeBuffers();
         this->_grid->free();
     }
 
@@ -113,6 +118,8 @@ namespace SPH {
 
      float* Simulator::getPositions() {
         return (float*) this->_bufferManager->get(Positions)->get();
+        //Marching::VertexData data = this->_marchingRenderer->getData();
+        //return (float*) data.positions;
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -125,12 +132,14 @@ namespace SPH {
 
     void Simulator::bindBuffers() {
         this->_bufferManager->bindBuffers();
+        this->_marchingRenderer->bindBuffers();
     }
 
     ////////////////////////////////////////////////////////////////////////////
 
     void Simulator::unbindBuffers() {
         this->_bufferManager->unbindBuffers();
+        this->_marchingRenderer->unbindBuffers();
     }
 
 
@@ -163,13 +172,15 @@ namespace SPH {
 
     ////////////////////////////////////////////////////////////////////////////
 
-    void Simulator::integrate(int numParticles, float deltaTime) {
+    void Simulator::_integrate(float deltaTime) {
         uint minBlockSize, numBlocks, numThreads;
         minBlockSize = 416;
-        Utils::computeGridSize(numParticles, minBlockSize, numBlocks, numThreads);
+        Utils::computeGridSize(
+            this->_numParticles, minBlockSize, numBlocks, numThreads
+        );
 
         Kernel::integrate<Data><<<numBlocks, numThreads>>>(
-            numParticles,
+            this->_numParticles,
             deltaTime,
             this->_particleData,
             this->_sortedData,
@@ -181,28 +192,31 @@ namespace SPH {
     ////////////////////////////////////////////////////////////////////////////
 
     void Simulator::update() {
+
         this->_grid->hash((float4*) this->getPositions());
         this->_grid->sort();
         this->_orderData();
 
-        Buffer::Memory<float>* buffer =
-            new Buffer::Memory<float>(new Buffer::Allocator(), Buffer::Host);
+        this->_marchingRenderer->render();
 
-        buffer->allocate(this->_numParticles);
+        /*Buffer::Memory<uint>* buffer =
+            new Buffer::Memory<uint>(new Buffer::Allocator(), Buffer::Host);
+
+        buffer->allocate(this->_grid->getNumCells());
 
         GridData gridData = this->_grid->getData();
 
-        cudaMemcpy(buffer->get(), this->_sortedData.neighbours, this->_numParticles * sizeof(float), cudaMemcpyDeviceToHost);
+        cudaMemcpy(buffer->get(), gridData.cellStop, this->_grid->getNumCells() * sizeof(uint), cudaMemcpyDeviceToHost);
 
-        float* e = buffer->get();
+        uint* e = buffer->get();*/
 
-        /*Buffer::Memory<float4>* posBuffer =
-            new Buffer::Memory<float4>(new Buffer::Allocator(), Buffer::Host);
+        /*Buffer::Memory<uint>* posBuffer =
+            new Buffer::Memory<uint>(new Buffer::Allocator(), Buffer::Host);
 
-        posBuffer->allocate(this->_numParticles);
+            posBuffer->allocate(this->_grid->getNumCells());
 
-        cudaMemcpy(posBuffer->get(), this->_sortedData.force, this->_numParticles * sizeof(float4), cudaMemcpyDeviceToHost);
-        float4* pos = posBuffer->get();
+        cudaMemcpy(posBuffer->get(), gridData.cellStart, this->_grid->getNumCells() * sizeof(uint), cudaMemcpyDeviceToHost);
+        uint* pos = posBuffer->get();
         */
         /*Buffer::Memory<int3>* cellBuffer =
         new Buffer::Memory<int3>(new Buffer::Allocator(), Buffer::Host);
@@ -213,24 +227,27 @@ namespace SPH {
         int3* cell = cellBuffer->get();
         */
         //cutilSafeCall(cutilDeviceSynchronize());
-        /*int c = 0;
-        for(uint i=0;i< this->_numParticles; i++) {
+        //int c = 0;
+        /*for(uint i=0;i< this->_grid->getNumCells(); i++) {
             //cout << e[i] << " " << pos[i].x << " " << pos[i].y << " " << pos[i].z << endl;
             //cout << pos[i].x << " " << pos[i].y << " " << pos[i].z << endl;
             //cout << e[i] << " " << cell[i].x << " " << cell[i].y << " " << cell[i].z << endl;
-            //cout << e[i] << endl;
-            if (e[i] < 18) c++;
+            cout << e[i] << endl;
+            //if (e[i] > 0) c++;
             //cout << "-----" << endl;
-        }*/
+        }
 
-        //std::cout << "____________________" << std::endl;
+        std::cout << "____________________" << std::endl;
         //std::cout << c << std::endl;
-
-
-
+        */
         this->_step1();
         this->_step2();
-        this->integrate(this->_numParticles, this->_database->selectValue(Timestep));
+        //this->_integrate(this->_database->selectValue(Timestep));
+
+
+
+
+        //
 
         //cutilSafeCall(cutilDeviceSynchronize());
     }
@@ -304,6 +321,15 @@ namespace SPH {
                 }
             }
         }
+
+        positions[0].x = 0.0f;
+        positions[0].y = 0.0f;
+        positions[0].z = 0.0f;
+
+        /*positions[0].x = 1.0 / 5.0f;
+        positions[0].y = 1.0 / 5.0f;
+        positions[0].z = 1.0 / 5.0f;
+        */
 
         cudaMemcpy(
             this->_particleData.position,
@@ -414,6 +440,7 @@ namespace SPH {
         this->_sortedData.cellPos = sCellPos->get();
 
         this->_bufferManager->unbindBuffers();
+
     }
 
     ////////////////////////////////////////////////////////////////////////////

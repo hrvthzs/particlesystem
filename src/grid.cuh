@@ -1,5 +1,5 @@
-#ifndef __GRID_H__
-#define __GRID_H__
+#ifndef __GRID_CUH__
+#define __GRID_CUH__
 
     enum eGridBuffers {
         Hash,
@@ -22,6 +22,7 @@
         // number of cells in each dimension
         float3 resolution;
         float3 delta;
+        float3 cellSize;
     };
 
     typedef enum eGridBuffers GridBuffers;
@@ -35,4 +36,4 @@
 
     __constant__ GridParams  cudaGridParams;
 
-#endif // __GRID_H__
+#endif // __GRID_CUH__

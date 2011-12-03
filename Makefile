@@ -39,8 +39,10 @@ EXECUTABLE	:= particleSystem
 CUFILES		:= \
 	src/kernel.cu \
 	src/main.cu \
+	src/marching_renderer.cu \
 	src/particle_system.cu \
 	src/grid_uniform.cu \
+	src/grid_utils.cu \
 	src/sph_simulator.cu \
 	src/utils.cu \
 
@@ -49,8 +51,9 @@ CU_DEPS		:= \
 	src/colors.cu \
 	src/boundary.cu \
 	src/boundary_walls.cu \
-	src/grid_utils.cu \
+	src/buffer_memory.cu \
 	src/grid_kernel.cu \
+	src/marching_kernel.cu \
 	src/sph_density.cu \
 	src/sph_force.cu \
 	src/sph_kernel.cu \

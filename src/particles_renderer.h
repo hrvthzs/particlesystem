@@ -2,7 +2,7 @@
 #define __PARTICLES_RENDERER_H__
 
 // OpenGL includes
-# include <GL/glew.h>
+#include <GL/glew.h>
 #include <SDL/SDL.h>
 
 #include "shader_program.h"
@@ -71,6 +71,7 @@ namespace Particles {
             SDL_Surface* _SDLSurface;
 
             GLuint _positionAttribute;
+            GLuint _normalAttribute;
             GLuint _colorAttribute;
             GLuint _mvpUniform;
             GLuint _mvUniform;
@@ -98,8 +99,10 @@ namespace Particles {
 
             unsigned int _numParticles;
 
-            GLuint _vbo;
+            GLuint _positionsVBO;
             GLuint _colorsVBO;
+            GLuint _normalsVBO;
+
             bool _animate;
             bool _dynamicColoring;
             float _deltaTime;
