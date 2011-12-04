@@ -51,15 +51,16 @@ namespace Particles {
 
     ////////////////////////////////////////////////////////////////////////////
 
-    GLuint Simulator::getNormalsVBO() {
-        return this->_normalsVBO;
+    GLuint Simulator::getColorsVBO() {
+        return this->_colorsVBO;
     }
 
     ////////////////////////////////////////////////////////////////////////////
 
-    GLuint Simulator::getColorsVBO() {
-        return this->_colorsVBO;
+    GLuint Simulator::getNormalsVBO() {
+        return this->_normalsVBO;
     }
+
 
     ////////////////////////////////////////////////////////////////////////////
 

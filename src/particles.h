@@ -12,6 +12,11 @@ namespace Particles {
         SortedVelocity
     };
 
+    enum eRenderMode {
+        RenderPoints,
+        RenderMarching
+    };
+
     struct sData {
 
         // color of each particle
@@ -28,9 +33,15 @@ namespace Particles {
 
     };
 
+    struct sGridMinMax {
+        float3 min;
+        float3 max;
+    };
 
     typedef struct sData Data;
+    typedef struct sGridMinMax GridMinMax;
     typedef enum eBuffers Buffers;
+    typedef enum eRenderMode RenderMode;
 
 };
 

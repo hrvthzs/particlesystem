@@ -7,6 +7,7 @@
 
 #include "shader_program.h"
 #include "particle_system.h"
+#include "particles.h"
 #include "particles_simulator.h"
 
 // Replacement for gluErrorString
@@ -69,21 +70,8 @@ namespace Particles {
             Simulator* _simulator;
             ShaderProgram* _shaderProgram;
             ShaderProgram* _marchingProgram;
+            ShaderProgram* _cubeProgram;
             SDL_Surface* _SDLSurface;
-
-            GLuint _positionAttribute;
-            GLuint _normalAttribute;
-            GLuint _colorAttribute;
-            GLuint _mvpUniform;
-            GLuint _mvUniform;
-            GLuint _mnUniform;
-            // window dimensions x -> width, y -> height
-            GLuint _windowUniform;
-            GLuint _aspectRatioUniform;
-            GLuint _lightUniform;
-            GLuint _pointScale;
-            GLuint _pointRadius;
-
 
             int _windowWidth;
             int _windowHeight;
@@ -94,6 +82,8 @@ namespace Particles {
             float _rotationX;
             float _rotationY;
             float _translationZ;
+
+            RenderMode _renderMode;
 
             ////////////////////////////////////////////////////////////////////
             // TEMPORARY SOLUTION
@@ -106,6 +96,7 @@ namespace Particles {
             GLuint _positionsVBO;
             GLuint _colorsVBO;
             GLuint _normalsVBO;
+            GLuint _cubeVBO;
 
             bool _animate;
             bool _dynamicColoring;
@@ -123,6 +114,7 @@ namespace Particles {
             );
 
             void _runCuda();
+            void _createCube();
 
     };
 };

@@ -12,7 +12,7 @@ namespace Particles {
     Renderer::Renderer(Simulator* simulator) {
         this->_simulator = simulator;
 
-        this->_numParticles = 2;
+        this->_numParticles = 4;
 
         this->_animate = false;
         this->_deltaTime = 0.0;
@@ -28,6 +28,8 @@ namespace Particles {
         this->_colorBits = 24;
         this->_SDLSurface = NULL;
 
+        this->_renderMode = RenderPoints;
+
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -35,7 +37,8 @@ namespace Particles {
     Renderer::~Renderer() {
         delete this->_simulator;
         delete this->_shaderProgram;
-        //delete this->_particleSystem;
+        delete this->_marchingProgram;
+        delete this->_cubeProgram;
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -49,11 +52,13 @@ namespace Particles {
 
             this->_initSDL(24, 0);
             this->_simulator->init(this->_numParticles);
+            this->_simulator->setRenderMode(this->_renderMode);
 
             this->_dynamicColoring =
                 this->_simulator->getValue(Settings::DynamicColoring);
 
             this->_onInit();
+            this->_createCube();
             this->_simulator->generateParticles();
             this->_render(10);
 
@@ -239,44 +244,13 @@ namespace Particles {
 
     void Renderer::_onInit() {
         this->_shaderProgram =
+            new ShaderProgram("shaders/shader.vs", "shaders/shader.fs");
+
+        this->_marchingProgram =
             new ShaderProgram("shaders/marching.vs", "shaders/marching.fs");
 
-        this->_positionAttribute =
-            this->_shaderProgram->getAttributeLocation("position");
-        this->_normalAttribute =
-            this->_shaderProgram->getAttributeLocation("normal");
-        this->_colorAttribute =
-            this->_shaderProgram->getAttributeLocation("color");
-
-        this->_pointScale =
-            this->_shaderProgram->getUniformLocation("pointScale");
-        this->_pointRadius =
-            this->_shaderProgram->getUniformLocation("pointRadius");
-        this->_mvpUniform =
-            this->_shaderProgram->getUniformLocation("mvp");
-        this->_mvUniform =
-            this->_shaderProgram->getUniformLocation("mv");
-        this->_mnUniform =
-            this->_shaderProgram->getUniformLocation("mn");
-        this->_windowUniform =
-            this->_shaderProgram->getUniformLocation("windowSize");
-        this->_aspectRatioUniform =
-            this->_shaderProgram->getUniformLocation("aspectRatio");
-        this->_lightUniform =
-            this->_shaderProgram->getUniformLocation("lightPosition");
-
-
-        /*uint3 gridSize;
-        gridSize.x = gridSize.y = gridSize.z = 10;
-
-        this->_particleSystem =
-            new ParticleSystem(this->_meshWidth * this->_meshHeight, gridSize);
-        this->_vbo = this->_particleSystem->getPositionsVBO();
-        */
-        this->_positionsVBO = this->_simulator->getPositionsVBO();
-        this->_normalsVBO = this->_simulator->getNormalsVBO();
-        this->_colorsVBO = this->_simulator->getColorsVBO();
-
+        this->_cubeProgram =
+            new ShaderProgram("shaders/cube.vs", "shaders/cube.fs");
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -306,8 +280,8 @@ namespace Particles {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glEnable(GL_DEPTH_TEST);
-        glCullFace(GL_BACK);
-        glEnable(GL_CULL_FACE);
+        //glCullFace(GL_BACK);
+        //glEnable(GL_CULL_FACE);
 
         glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
 
@@ -342,67 +316,95 @@ namespace Particles {
 
         glm::mat4 mvp = projection*mv;
 
-
-        this->_shaderProgram->use();
-
-        // Set matrices
-        glUniformMatrix4fv(this->_mvUniform, 1, GL_FALSE, glm::value_ptr(mv));
-        glUniformMatrix4fv(this->_mvpUniform, 1, GL_FALSE, glm::value_ptr(mvp));
-        glUniformMatrix3fv(this->_mnUniform, 1, GL_FALSE, glm::value_ptr(mn));
-
-        glUniform3f(this->_lightUniform, 0.0f, 2.0f, 0.0f);
-
-        glEnableVertexAttribArray(this->_positionAttribute);
-        glEnableVertexAttribArray(this->_colorAttribute);
-        glEnableVertexAttribArray(this->_normalAttribute);
-
-        glUniform1f(
-            this->_pointScale,
-            this->_windowWidth / tanf(45.0f*0.5f*(float)M_PI/180.0f)
-        );
-        glUniform1f(this->_pointRadius, 50.f);
-        glUniform1f(this->_aspectRatioUniform, this->_aspectRatio);
-
         glm::vec2 windowSize =
             glm::vec2(this->_windowWidth, this->_windowHeight);
 
-        glUniform2fv(this->_windowUniform, 1, glm::value_ptr(windowSize));
+
+        this->_cubeProgram->use();
+
+        this->_cubeProgram
+            ->setUniformMatrix4fv(
+                "mvp", 1, GL_FALSE, glm::value_ptr(mvp)
+            );
+
 
 
         //TODO create VAO for VBOs and attributes
         // Draw data
-        glBindBuffer(GL_ARRAY_BUFFER, this->_positionsVBO);
-        glVertexAttribPointer(
-            this->_positionAttribute,
-            4,
-            GL_FLOAT,
-            GL_FALSE,
-            0,
-            (void*) 0
-        );
-
-        glBindBuffer(GL_ARRAY_BUFFER, this->_normalsVBO);
-        glVertexAttribPointer(
-            this->_normalAttribute,
-            4,
-            GL_FLOAT,
-            GL_FALSE,
-            0,
-            (void*) 0
-        );
-
-        glBindBuffer(GL_ARRAY_BUFFER, this->_colorsVBO);
-        glVertexAttribPointer(
-            this->_colorAttribute,
-            4,
-            GL_FLOAT,
-            GL_FALSE,
-            0,
-            (void*) 0
+        glBindBuffer(GL_ARRAY_BUFFER, this->_cubeVBO);
+        this->_cubeProgram->setAttribute(
+            "position", 4, GL_FLOAT, GL_FALSE, 0, (void*) 0
         );
 
 
-        glDrawArrays(GL_TRIANGLES, 0, this->_simulator->getNumVertices());
+        glDrawArrays(GL_LINES, 0, 96);
+
+        // Set matrices
+        if (this->_renderMode == RenderPoints) {
+
+            this->_shaderProgram->use();
+
+            this->_shaderProgram
+                ->setUniformMatrix4fv(
+                    "mv", 1, GL_FALSE, glm::value_ptr(mv)
+                )
+                ->setUniformMatrix4fv(
+                    "mvp", 1, GL_FALSE, glm::value_ptr(mvp)
+                )
+                ->setUniform1f(
+                    "pointScale",
+                    this->_windowWidth / tanf(45.0f*0.5f*(float)M_PI/180.0f)
+                )
+                ->setUniform1f("pointRadius", 50.f)
+                ->setUniform1f("aspectRatio", this->_aspectRatio)
+                ->setUniform2fv("windowSize", 1, glm::value_ptr(windowSize));
+
+
+
+            //TODO create VAO for VBOs and attributes
+            // Draw data
+            glBindBuffer(GL_ARRAY_BUFFER, this->_simulator->getPositionsVBO());
+            this->_shaderProgram->setAttribute(
+                "position", 4, GL_FLOAT, GL_FALSE, 0, (void*) 0
+            );
+
+            glBindBuffer(GL_ARRAY_BUFFER, this->_simulator->getColorsVBO());
+            this->_shaderProgram->setAttribute(
+                "color", 4, GL_FLOAT, GL_FALSE, 0, (void*) 0
+            );
+
+            glDrawArrays(GL_POINTS, 0, this->_numParticles);
+        } else {
+
+            this->_marchingProgram->use();
+
+            this->_marchingProgram
+                ->setUniformMatrix4fv(
+                    "mv", 1, GL_FALSE, glm::value_ptr(mv)
+                )
+                ->setUniformMatrix4fv(
+                    "mvp", 1, GL_FALSE, glm::value_ptr(mvp)
+                )
+                ->setUniformMatrix3fv(
+                    "mn", 1, GL_FALSE, glm::value_ptr(mn)
+                )
+                ->setUniform3f("lightPosition", 0.0f, 2.0f, 0.0f);
+
+            // Draw data
+            glBindBuffer(GL_ARRAY_BUFFER, this->_simulator->getPositionsVBO());
+            this->_marchingProgram->setAttribute(
+                "position", 4, GL_FLOAT, GL_FALSE, 0, (void*) 0
+            );
+
+            glBindBuffer(GL_ARRAY_BUFFER, this->_simulator->getNormalsVBO());
+            this->_marchingProgram->setAttribute(
+                "normal", 4, GL_FLOAT, GL_FALSE, 0, (void*) 0
+            );
+
+            glDrawArrays(GL_TRIANGLES, 0, this->_simulator->getNumVertices());
+
+        }
+
         glDisable(GL_POINT_SPRITE_ARB);
         glDisable(GL_VERTEX_PROGRAM_POINT_SIZE_NV);
         SDL_GL_SwapBuffers();
@@ -433,6 +435,14 @@ namespace Particles {
                     Settings::DynamicColoring,
                     this->_dynamicColoring
                 );
+                break;
+            case SDLK_p:
+                this->_renderMode = RenderPoints;
+                this->_simulator->setRenderMode(this->_renderMode);
+                break;
+            case SDLK_m:
+                this->_renderMode = RenderMarching;
+                this->_simulator->setRenderMode(this->_renderMode);
                 break;
             default:
                 break;
@@ -566,6 +576,60 @@ namespace Particles {
         this->_simulator->unbindBuffers();*/
     }
 
+
+
+    void Renderer::_createCube() {
+        glGenBuffers(1, &this->_cubeVBO);
+        GridMinMax grid = this->_simulator->getGridMinMax();
+        float3 min = grid.min;
+        float3 max = grid.max;
+
+        float cube[96] = {
+            // FRONT
+            min.x, min.y, min.z, 1.0f,
+            max.x, min.y, min.z, 1.0f,
+
+            max.x, min.y, min.z, 1.0f,
+            max.x, max.y, min.z, 1.0f,
+
+            max.x, max.y, min.z, 1.0f,
+            min.x, max.y, min.z, 1.0f,
+
+            min.x, max.y, min.z, 1.0f,
+            min.x, min.y, min.z, 1.0f,
+
+            // BACK
+
+            min.x, min.y, max.z, 1.0f,
+            max.x, min.y, max.z, 1.0f,
+
+            max.x, min.y, max.z, 1.0f,
+            max.x, max.y, max.z, 1.0f,
+
+            max.x, max.y, max.z, 1.0f,
+            min.x, max.y, max.z, 1.0f,
+
+            min.x, max.y, max.z, 1.0f,
+            min.x, min.y, max.z, 1.0f,
+
+            // LEFT
+            min.x, min.y, min.z, 1.0f,
+            min.x, min.y, max.z, 1.0f,
+
+            min.x, max.y, min.z, 1.0f,
+            min.x, max.y, max.z, 1.0f,
+
+            //RIGHT
+            max.x, min.y, min.z, 1.0f,
+            max.x, min.y, max.z, 1.0f,
+
+            max.x, max.y, min.z, 1.0f,
+            max.x, max.y, max.z, 1.0f
+        };
+
+        glBindBuffer(GL_ARRAY_BUFFER, this->_cubeVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(cube), &cube, GL_DYNAMIC_DRAW);
+    }
     ////////////////////////////////////////////////////////////////////////////
 
 }

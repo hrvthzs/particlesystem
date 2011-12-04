@@ -58,11 +58,40 @@ class ShaderProgram {
         void use();
 
         /**
-         * Add shader attribute
+         * Set shader attribute
          *
          * @see glVertexAttribPointer
          */
-        void addAttribute (string attribute, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid * pointer);
+        ShaderProgram* setAttribute (
+            string attribute,
+            GLint size,
+            GLenum type,
+            GLboolean normalized,
+            GLsizei stride,
+            const GLvoid* pointer);
+
+        /**
+         * Set uniform values
+         */
+        ShaderProgram* setUniform1f(string uniform, GLfloat v0);
+        ShaderProgram* setUniform3f(string uniform, GLfloat v0, GLfloat v1, GLfloat v2);
+        ShaderProgram* setUniform2fv(string uniform, GLsizei count, const GLfloat* value);
+        ShaderProgram* setUniform3fv(string uniform, GLsizei count, const GLfloat* value);
+        ShaderProgram* setUniform4fv(string uniform, GLsizei count, const GLfloat* value);
+
+        ShaderProgram* setUniformMatrix3fv(
+            string uniform,
+            GLsizei count,
+            GLboolean transpose,
+            const GLfloat* value
+        );
+
+        ShaderProgram* setUniformMatrix4fv(
+            string uniform,
+            GLsizei count,
+            GLboolean transpose,
+            const GLfloat* value
+        );
 
         /**
          * Get attribute location
@@ -90,7 +119,7 @@ class ShaderProgram {
          * @param const GLenum type - type of shader
          * @param const char *soruce - path to shader
          */
-        void add (const GLenum type, const char *source);
+        void add(const GLenum type, const char *source);
 
         /**
          * Load shader form file
@@ -98,7 +127,7 @@ class ShaderProgram {
          * @param const char *filename - path to shader
          * @return content of loaded file
          */
-        string load (const char *filename);
+        string load(const char *filename);
 
         /**
          * Get info log of shader
@@ -106,7 +135,7 @@ class ShaderProgram {
          * @param const GLuint shader - shader pointer
          * @return info string
          */
-        string getShaderInfoLog (const GLuint shader);
+        string getShaderInfoLog(const GLuint shader);
 
         /**
          * Get info log of program
@@ -114,7 +143,7 @@ class ShaderProgram {
          * @param const GLuint program - program pointer
          * @return info string
          */
-        string getProgramInfoLog (const GLuint program);
+        string getProgramInfoLog(const GLuint program);
 
         /**
          * Compile shader
@@ -132,7 +161,7 @@ class ShaderProgram {
          * @param ... - shader pointers
          * @return pointer to program
          */
-        GLuint link (size_t count, ...);
+        GLuint link(size_t count, ...);
 
         /**
          * Vertex shader pointer

@@ -5,9 +5,6 @@
 #include "grid_utils.cu"
 #include "marching.h"
 
-#include <thrust/device_vector.h>
-#include <thrust/scan.h>
-
 namespace Marching {
 
     namespace Kernel {
@@ -20,12 +17,12 @@ namespace Marching {
             int3 cell,
             GridData &gridData
         ) {
-            if (cell.x >= cudaGridParams.resolution.x ||
-                cell.y >= cudaGridParams.resolution.y ||
-                cell.z >= cudaGridParams.resolution.z
+            /*if (cell.x >= cudaGridParams.resolution.x-1 ||
+                cell.y >= cudaGridParams.resolution.y-1 ||
+                cell.z >= cudaGridParams.resolution.z-1
             ) {
                 return 0.0f;
-            }
+            }*/
 
             volatile uint hash = Utils::computeCellHash(cell, cudaGridParams);
             volatile uint cellStart = gridData.cellStart[hash];
@@ -54,6 +51,8 @@ namespace Marching {
 
         // compute interpolated vertex along an edge
         __device__ float3 vertexInterolation(float3 p0, float3 p1) {
+            p0 = (p0 + cudaGridParams.min - 1.0) * cudaGridParams.cellSize;
+            p1 = (p1 + cudaGridParams.min - 1.0) * cudaGridParams.cellSize;
             return (p0 + p1) / 2.0f;
         }
 
@@ -167,20 +166,20 @@ namespace Marching {
             int3 cell = computeVoxelPosition(voxel);
 
             float3 p;
-            p.x = cell.x + cudaGridParams.min.x;
-            p.y = cell.y + cudaGridParams.min.y;
-            p.z = cell.z + cudaGridParams.min.z;
+            p.x = cell.x;// + cudaGridParams.min.x;
+            p.y = cell.y;// + cudaGridParams.min.y;
+            p.z = cell.z;// + cudaGridParams.min.z;
 
             // calculate cell vertex positions
             float3 v[8];
             v[0] = p;
-            v[1] = p + make_float3(cellSize.x, 0, 0);
-            v[2] = p + make_float3(cellSize.x, cellSize.y, 0);
-            v[3] = p + make_float3(0, cellSize.y, 0);
-            v[4] = p + make_float3(0, 0, cellSize.z);
-            v[5] = p + make_float3(cellSize.x, 0, cellSize.z);
-            v[6] = p + make_float3(cellSize.x, cellSize.y, cellSize.z);
-            v[7] = p + make_float3(0, cellSize.y, cellSize.z);
+            v[1] = p + make_float3(1, 0, 0);
+            v[2] = p + make_float3(1, 1, 0);
+            v[3] = p + make_float3(0, 1, 0);
+            v[4] = p + make_float3(0, 0, 1);
+            v[5] = p + make_float3(1, 0, 1);
+            v[6] = p + make_float3(1, 1, 1);
+            v[7] = p + make_float3(0, 1, 1);
 
             float field[8];
             field[0] = sampleVolume(cell, gridData);

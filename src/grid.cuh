@@ -34,6 +34,6 @@
      */
     #define EMPTY_CELL_VALUE 0xffffffff
 
-    __constant__ GridParams  cudaGridParams;
+    __constant__ GridParams cudaGridParams;
 
 #endif // __GRID_CUH__

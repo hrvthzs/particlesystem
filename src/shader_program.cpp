@@ -18,7 +18,9 @@ void ShaderProgram::use () {
     glUseProgram(this->program);
 }
 
-void ShaderProgram::addAttribute (
+///////////////////////////////////////////////////////////////////////////////
+
+ShaderProgram* ShaderProgram::setAttribute (
     string attribute,
     GLint size,
     GLenum type,
@@ -29,8 +31,94 @@ void ShaderProgram::addAttribute (
     GLuint index = this->getAttributeLocation(attribute);
     glVertexAttribPointer(index, size, type, normalized, stride, pointer);
     glEnableVertexAttribArray(index);
+    return this;
 
 }
+
+////////////////////////////////////////////////////////////////////////////////
+
+ShaderProgram* ShaderProgram::setUniform1f(string uniform, GLfloat v0) {
+    GLuint location = this->getUniformLocation(uniform);
+    glUniform1f(location, v0);
+    return this;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+ShaderProgram* ShaderProgram::setUniform3f(
+    string uniform,
+    GLfloat v0,
+    GLfloat v1,
+    GLfloat v2
+) {
+    GLuint location = this->getUniformLocation(uniform);
+    glUniform3f(location, v0, v1, v2);
+    return this;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+ShaderProgram* ShaderProgram::setUniform2fv(
+    string uniform,
+    GLsizei count,
+    const GLfloat* value
+) {
+    GLuint location = this->getUniformLocation(uniform);
+    glUniform2fv(location, count, value);
+    return this;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+ShaderProgram* ShaderProgram::setUniform3fv(
+    string uniform,
+    GLsizei count,
+    const GLfloat* value
+) {
+    GLuint location = this->getUniformLocation(uniform);
+    glUniform3fv(location, count, value);
+    return this;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+ShaderProgram* ShaderProgram::setUniform4fv(
+    string uniform,
+    GLsizei count,
+    const GLfloat* value
+) {
+    GLuint location = this->getUniformLocation(uniform);
+    glUniform4fv(location, count, value);
+    return this;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+ShaderProgram* ShaderProgram::setUniformMatrix3fv(
+    string uniform,
+    GLsizei count,
+    GLboolean transpose,
+    const GLfloat* value
+) {
+    GLuint location = this->getUniformLocation(uniform);
+    glUniformMatrix3fv(location, count, transpose, value);
+    return this;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+ShaderProgram* ShaderProgram::setUniformMatrix4fv(
+    string uniform,
+    GLsizei count,
+    GLboolean transpose,
+    const GLfloat* value
+) {
+    GLuint location = this->getUniformLocation(uniform);
+    glUniformMatrix4fv(location, count, transpose, value);
+    return this;
+}
+
+////////////////////////////////////////////////////////////////////////////////
 
 GLuint ShaderProgram::getAttributeLocation (string attribute) {
     return glGetAttribLocation(this->program, attribute.c_str());

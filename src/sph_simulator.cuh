@@ -6,6 +6,7 @@
 #include "buffer_vertex.h"
 #include "grid_uniform.cuh"
 #include "marching_renderer.cuh"
+#include "particles.h"
 #include "particles_simulator.h"
 #include "settings.h"
 #include "settings_database.h"
@@ -43,6 +44,9 @@ namespace SPH {
             void generateParticles();
             uint getNumVertices();
 
+            void setRenderMode(int mode);
+            Particles::GridMinMax getGridMinMax();
+
         protected:
 
 
@@ -60,6 +64,7 @@ namespace SPH {
             GridParams _gridParams;
 
             Marching::Renderer* _marchingRenderer;
+            int _renderMode;
 
         private:
             void _integrate (float deltaTime);

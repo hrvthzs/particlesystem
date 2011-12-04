@@ -21,7 +21,6 @@ namespace SPH {
     ////////////////////////////////////////////////////////////////////////////
 
     Simulator::Simulator () {
-
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -69,7 +68,7 @@ namespace SPH {
             float boundaryDist = 1.5 * particleRestDist;
             //float smoothingLength = pow(this->_numParticles, 1.0/3.0)*1.2;//2.0 * particleRestDist;
             //float cellSize = 2.0/pow(this->_numParticles, 1.0/3.0);
-            float cellSize = 1.0;
+            float cellSize = 0.5;
             // maybe 2 x cellSize is the ideal value for smoothing length
             // but not only if simulation scale is 1
             float smoothingLength = cellSize*1.9;//2.0 * particleRestDist;
@@ -100,12 +99,6 @@ namespace SPH {
         this->_createBuffers();
 
         this->_marchingRenderer = new Marching::Renderer(this->_grid);
-
-        this->_positionsVBO = this->_marchingRenderer->getPositionsVBO();
-        this->_normalsVBO = this->_marchingRenderer->getNormalsVBO();
-
-
-
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -199,7 +192,9 @@ namespace SPH {
         this->_grid->sort();
         this->_orderData();
 
-        this->_marchingRenderer->render();
+        if (this->_renderMode == Particles::RenderMarching) {
+            this->_marchingRenderer->render();
+        }
 
         /*Buffer::Memory<uint>* buffer =
             new Buffer::Memory<uint>(new Buffer::Allocator(), Buffer::Host);
@@ -212,14 +207,14 @@ namespace SPH {
 
         uint* e = buffer->get();*/
 
-        /*Buffer::Memory<uint>* posBuffer =
-            new Buffer::Memory<uint>(new Buffer::Allocator(), Buffer::Host);
+        Buffer::Memory<float4>* posBuffer =
+            new Buffer::Memory<float4>(new Buffer::Allocator(), Buffer::Host);
 
-            posBuffer->allocate(this->_grid->getNumCells());
+        posBuffer->allocate(this->_numParticles);
 
-        cudaMemcpy(posBuffer->get(), gridData.cellStart, this->_grid->getNumCells() * sizeof(uint), cudaMemcpyDeviceToHost);
-        uint* pos = posBuffer->get();
-        */
+        cudaMemcpy(posBuffer->get(), this->_sortedData.position, this->_numParticles * sizeof(float4), cudaMemcpyDeviceToHost);
+        float4* pos = posBuffer->get();
+
         /*Buffer::Memory<int3>* cellBuffer =
         new Buffer::Memory<int3>(new Buffer::Allocator(), Buffer::Host);
 
@@ -230,11 +225,11 @@ namespace SPH {
         */
         //cutilSafeCall(cutilDeviceSynchronize());
         //int c = 0;
-        /*for(uint i=0;i< this->_grid->getNumCells(); i++) {
+        /*for(uint i=0;i< this->_numParticles; i++) {
             //cout << e[i] << " " << pos[i].x << " " << pos[i].y << " " << pos[i].z << endl;
-            //cout << pos[i].x << " " << pos[i].y << " " << pos[i].z << endl;
+            cout << pos[i].x << " " << pos[i].y << " " << pos[i].z << endl;
             //cout << e[i] << " " << cell[i].x << " " << cell[i].y << " " << cell[i].z << endl;
-            cout << e[i] << endl;
+            //cout << e[i] << endl;
             //if (e[i] > 0) c++;
             //cout << "-----" << endl;
         }
@@ -324,14 +319,21 @@ namespace SPH {
             }
         }
 
-        /*positions[0].x = 0.0f;
-        positions[0].y = 0.0f;
-        positions[0].z = 0.0f;
+        positions[0].x = 0.1f;
+        positions[0].y = 0.1f;
+        positions[0].z = 0.1f;
 
-        positions[0].x = 1.0 / 5.0f;
-        positions[0].y = 1.0 / 5.0f;
-        positions[0].z = 1.0 / 5.0f;
-        */
+        positions[1].x = 0.6f;
+        positions[1].y = 0.1f;
+        positions[1].z = 0.1f;
+
+        positions[2].x = 0.1f;
+        positions[2].y = 0.6f;
+        positions[2].z = 0.1f;
+
+        positions[3].x = 0.6f;
+        positions[3].y = 0.6f;
+        positions[3].z = 0.1f;
 
         cudaMemcpy(
             this->_particleData.position,
@@ -356,7 +358,46 @@ namespace SPH {
     ////////////////////////////////////////////////////////////////////////////
 
     uint Simulator::getNumVertices() {
-        return this->_marchingRenderer->getNumVertices();
+        if (this->_renderMode == Particles::RenderPoints) {
+            return this->_numParticles;
+        } else {
+            return this->_marchingRenderer->getNumVertices();
+        }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+
+    void Simulator::setRenderMode(int mode) {
+        this->_renderMode = mode;
+
+        if(mode == Particles::RenderPoints) {
+            Buffer::Vertex<float4>* positions;
+            Buffer::Vertex<float4>* colors;
+
+            positions =
+                (Buffer::Vertex<float4>*) this->_bufferManager->get(Positions);
+
+            colors =
+                (Buffer::Vertex<float4>*) this->_bufferManager->get(Colors);
+
+            this->_positionsVBO = positions->getVBO();
+            this->_colorsVBO = colors->getVBO();
+            this->_normalsVBO = 0;
+        } else {
+            this->_positionsVBO = this->_marchingRenderer->getPositionsVBO();
+            this->_normalsVBO = this->_marchingRenderer->getNormalsVBO();
+            this->_colorsVBO = 0;
+        }
+
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+
+    Particles::GridMinMax Simulator::getGridMinMax() {
+        Particles::GridMinMax grid;
+        grid.min = this->_gridParams.min;
+        grid.max = this->_gridParams.max;
+        return grid;
     }
 
     ////////////////////////////////////////////////////////////////////////////

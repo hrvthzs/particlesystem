@@ -5,6 +5,10 @@
 #include "marching_kernel.cu"
 #include "marching_tables.h"
 
+#include <thrust/device_vector.h>
+#include <thrust/scan.h>
+
+
 #include <iostream>
 
 using namespace std;
@@ -31,7 +35,6 @@ namespace Marching {
                 sizeof(GridParams)
             )
         );
-
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -167,7 +170,7 @@ namespace Marching {
         cout << "______" << endl;
         */
 
-        /*Buffer::Memory<float4>* buffer =
+        Buffer::Memory<float4>* buffer =
         new Buffer::Memory<float4>(new Buffer::Allocator(), Buffer::Host);
 
         buffer->allocate(this->_maxVertices);
@@ -175,16 +178,16 @@ namespace Marching {
 
         cudaMemcpy(
             buffer->get(),
-                   this->_vertexData.normals,
+                   this->_vertexData.positions,
                    this->_numVertices * sizeof(float4),
                    cudaMemcpyDeviceToHost
         );
-        */
-        /*for(uint i=0;i<this->_numVertices; i++) {
+
+        for(uint i=0;i<this->_numVertices; i++) {
             cout << p[i].x << ", " << p[i].y << ", " << p[i].z << "," << p[i].w << endl;
         }
         cout << "______" << endl;
-        */
+
     }
 
     ////////////////////////////////////////////////////////////////////////////

@@ -22,7 +22,6 @@ void main()
     gl_PointSize = pointScale / correction;
     pos = mvp * vec4(position);
     col = color;
-    col = vec4(1.0, 0.0, 0.0, 1.0);
     gl_Position = pos;
 
 }
