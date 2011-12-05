@@ -146,7 +146,7 @@ namespace Grid {
         buffer->allocate(this->_numParticles);
 
 
-        cudaMemcpy(buffer->get(), this->_data.cellStop, this->_numCells * sizeof(uint), cudaMemcpyDeviceToHost);
+        cudaMemcpy(buffer->get(), this->_data.hash, this->_numParticles * sizeof(uint), cudaMemcpyDeviceToHost);
         uint* hash = buffer->get();
         cutilSafeCall(cutilDeviceSynchronize());
 

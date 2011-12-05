@@ -39,8 +39,8 @@ namespace SPH {
         // DATABASE
         this->_database
             ->insert(ParticleNumber, "Particles", this->_numParticles)
-            ->insert(GridSize, "Grid size", 5.0f)
-            ->insert(Timestep, "Timestep", 0.0f, 1.0f, 0.001f)
+            ->insert(GridSize, "Grid size", 2.0f)
+            ->insert(Timestep, "Timestep", 0.0f, 1.0f, 0.01f)
             ->insert(RestDensity, "Rest density", 0.0f, 10000.0f, 2000.0f)
             ->insert(RestPressure, "Rest pressure", 0.0f, 10000.0f, 0.0f)
             ->insert(GasStiffness, "Gas Stiffness", 0.001f, 10.0f, 1.0f)
@@ -65,10 +65,14 @@ namespace SPH {
                     particleMass / this->_database->selectValue(RestDensity),
                     1.0f/3.0f
                 );
-            float boundaryDist = 1.5 * particleRestDist;
+
+            // if boundary distance is too small particles can drop off the grid
+            // for only a small distance but for marching cubes this is not
+            // acceptable
+            float boundaryDist = 0.05; //10 * particleRestDist;
             //float smoothingLength = pow(this->_numParticles, 1.0/3.0)*1.2;//2.0 * particleRestDist;
-            //float cellSize = 2.0/pow(this->_numParticles, 1.0/3.0);
-            float cellSize = 0.5;
+            float cellSize = 2.0/pow(this->_numParticles, 1.0/3.0);
+            //float cellSize = 1.0;
             // maybe 2 x cellSize is the ideal value for smoothing length
             // but not only if simulation scale is 1
             float smoothingLength = cellSize*1.9;//2.0 * particleRestDist;
@@ -199,22 +203,22 @@ namespace SPH {
         /*Buffer::Memory<uint>* buffer =
             new Buffer::Memory<uint>(new Buffer::Allocator(), Buffer::Host);
 
-        buffer->allocate(this->_grid->getNumCells());
+            buffer->allocate(this->_numParticles);
 
         GridData gridData = this->_grid->getData();
 
-        cudaMemcpy(buffer->get(), gridData.cellStop, this->_grid->getNumCells() * sizeof(uint), cudaMemcpyDeviceToHost);
+        cudaMemcpy(buffer->get(), gridData.hash, this->_numParticles * sizeof(uint), cudaMemcpyDeviceToHost);
 
-        uint* e = buffer->get();*/
-
-        Buffer::Memory<float4>* posBuffer =
+        uint* e = buffer->get();
+        */
+        /*Buffer::Memory<float4>* posBuffer =
             new Buffer::Memory<float4>(new Buffer::Allocator(), Buffer::Host);
 
         posBuffer->allocate(this->_numParticles);
 
         cudaMemcpy(posBuffer->get(), this->_sortedData.position, this->_numParticles * sizeof(float4), cudaMemcpyDeviceToHost);
         float4* pos = posBuffer->get();
-
+        */
         /*Buffer::Memory<int3>* cellBuffer =
         new Buffer::Memory<int3>(new Buffer::Allocator(), Buffer::Host);
 
@@ -319,21 +323,71 @@ namespace SPH {
             }
         }
 
-        positions[0].x = 0.1f;
-        positions[0].y = 0.1f;
-        positions[0].z = 0.1f;
+        /*positions[0].x = -0.8549;
+        positions[0].y = 0.6905;
+        positions[0].z = 0.8506;*/
 
-        positions[1].x = 0.6f;
-        positions[1].y = 0.1f;
-        positions[1].z = 0.1f;
+        /*positions[0].x = 1.5f;
+        positions[0].y = 1.5f;
+        positions[0].z = 1.5f;
 
-        positions[2].x = 0.1f;
-        positions[2].y = 0.6f;
-        positions[2].z = 0.1f;
+        positions[1].x = 1.5f;
+        positions[1].y = -1.5f;
+        positions[1].z = -1.5f;
 
-        positions[3].x = 0.6f;
-        positions[3].y = 0.6f;
-        positions[3].z = 0.1f;
+        positions[2].x = -0.5f;
+        positions[2].y = 0.5f;
+        positions[2].z = -0.5f;
+
+        positions[3].x = 0.5f;
+        positions[3].y = 0.5f;
+        positions[3].z = -0.5f;
+
+        positions[4].x = -0.5f;
+        positions[4].y = -0.5f;
+        positions[4].z = 0.5f;
+
+        positions[5].x = 0.5f;
+        positions[5].y = -0.5f;
+        positions[5].z = 0.5f;
+
+        positions[6].x = -0.5f;
+        positions[6].y = 0.5f;
+        positions[6].z = 0.5f;
+
+        positions[7].x = 0.5f;
+        positions[7].y = 0.5f;
+        positions[7].z = 0.5f;*/
+
+        /*positions[0].x = -0.8549;
+        positions[0].y = 0.6905;
+        positions[0].z = 0.8506;
+
+        positions[1].x = -0.01387;
+        positions[1].y = 0.8481;
+        positions[1].z = 0.01657;
+
+        positions[2].x = 1.014;
+        positions[2].y = 0.846;
+        positions[2].z = 0.01484;
+
+        positions[3].x = 1.013;
+        positions[3].y = 0.8424;
+        positions[3].z = -0.5224;
+
+        positions[4].x = -0.0115;
+        positions[4].y = -0.1777;
+        positions[4].z = 0.002949;
+        */
+        /*positions[5].x = 1.013;
+        positions[5].y = -0.1771;
+        positions[5].z = 0.002701;
+
+        positions[6].x = -0.8543;
+        positions[6].y = -1.012;
+        positions[6].z = -0.8425;*/
+
+
 
         cudaMemcpy(
             this->_particleData.position,

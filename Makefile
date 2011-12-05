@@ -60,6 +60,7 @@ CU_DEPS		:= \
 	src/sph_kernels_poly6.cu \
 	src/sph_kernels.cu \
 	src/sph_neighbours.cu \
+	src/marching.h \
 
 
 # C/C++ source files (compiled with gcc / c++)

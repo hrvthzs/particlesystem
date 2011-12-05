@@ -17,12 +17,15 @@ namespace Marching {
             int3 cell,
             GridData &gridData
         ) {
-            /*if (cell.x >= cudaGridParams.resolution.x-1 ||
-                cell.y >= cudaGridParams.resolution.y-1 ||
-                cell.z >= cudaGridParams.resolution.z-1
+            if (cell.x >= cudaGridParams.resolution.x ||
+                cell.y >= cudaGridParams.resolution.y ||
+                cell.z >= cudaGridParams.resolution.z ||
+                cell.x < 0 ||
+                cell.y < 0 ||
+                cell.z < 0
             ) {
                 return 0.0f;
-            }*/
+            }
 
             volatile uint hash = Utils::computeCellHash(cell, cudaGridParams);
             volatile uint cellStart = gridData.cellStart[hash];
@@ -35,14 +38,18 @@ namespace Marching {
         __device__ int3 computeVoxelPosition(
             uint &index
         ) {
-            float px = cudaGridParams.resolution.x;
-            float pxy = px * cudaGridParams.resolution.y;
+
+            float px = cudaGridParams.resolution.x + GRID_OFFSET;
+            float pxy = px * (cudaGridParams.resolution.y + GRID_OFFSET);
+
 
             int3 cell;
             cell.z = floor(index / pxy);
             int tmp = index - (cell.z * pxy);
             cell.y = floor(tmp / px);
             cell.x = floor(tmp - cell.y * px);
+
+            cell -= 1;
 
             return cell;
         }
@@ -51,9 +58,9 @@ namespace Marching {
 
         // compute interpolated vertex along an edge
         __device__ float3 vertexInterolation(float3 p0, float3 p1) {
-            p0 = (p0 + cudaGridParams.min - 1.0) * cudaGridParams.cellSize;
-            p1 = (p1 + cudaGridParams.min - 1.0) * cudaGridParams.cellSize;
-            return (p0 + p1) / 2.0f;
+            p0 = ((p0 + 0.5f) * cudaGridParams.cellSize + cudaGridParams.min);
+            p1 = ((p1 + 0.5f) * cudaGridParams.cellSize + cudaGridParams.min);
+            return ((p0 + p1) - 1.0f + GRID_OFFSET) / 2.0f;
         }
 
         ////////////////////////////////////////////////////////////////////////
@@ -78,15 +85,19 @@ namespace Marching {
             int hash =
                 threadIdx.x +
                 __mul24(
-                    gridDim.x,
-                    blockIdx.x + __mul24(blockIdx.y, gridDim.y)
+                    blockDim.x,
+                    blockIdx.x + __mul24(blockIdx.y, gridDim.x)
                 );
 
             if (hash >= numCells) {
                 return;
             }
 
-            int3 cell = make_int3(threadIdx.x, blockIdx.x, blockIdx.y);
+            int3 cell = make_int3(
+                threadIdx.x - GRID_OFFSET,
+                blockIdx.x  - GRID_OFFSET,
+                blockIdx.y  - GRID_OFFSET
+            );
 
             float field[8];
             field[0] = sampleVolume(cell, gridData);
@@ -123,8 +134,8 @@ namespace Marching {
             int hash =
                 threadIdx.x +
                 __mul24(
-                    gridDim.x,
-                    blockIdx.x + __mul24(blockIdx.y, gridDim.y)
+                    blockDim.x,
+                    blockIdx.x + __mul24(blockIdx.y, gridDim.x)
                 );
 
             if (hash >= numCells) {
@@ -153,12 +164,13 @@ namespace Marching {
             int index =
                 threadIdx.x +
                 __mul24(
-                    gridDim.x,
-                    blockIdx.x + __mul24(blockIdx.y, gridDim.y)
+                    blockDim.x,
+                    blockIdx.x + __mul24(blockIdx.y, gridDim.x)
                 );
 
-            if (index >= activeVoxels) {
-                return;
+
+            if (index > activeVoxels - 1) {
+                index = activeVoxels - 1;
             }
 
             uint voxel = voxelData.compact[index];
@@ -203,21 +215,22 @@ namespace Marching {
             cubeIndex += uint(field[6] < isoValue) * 64;
             cubeIndex += uint(field[7] < isoValue) * 128;
 
+
             // use shared memory to avoid using local
-            __shared__ float3 vertlist[12*32];
+            __shared__ float3 vertlist[12*NTHREADS];
 
             vertlist[        threadIdx.x] = vertexInterolation(v[0], v[1]);
-            vertlist[32     +threadIdx.x] = vertexInterolation(v[1], v[2]);
-            vertlist[(32* 2)+threadIdx.x] = vertexInterolation(v[2], v[3]);
-            vertlist[(32* 3)+threadIdx.x] = vertexInterolation(v[3], v[0]);
-            vertlist[(32* 4)+threadIdx.x] = vertexInterolation(v[4], v[5]);
-            vertlist[(32* 5)+threadIdx.x] = vertexInterolation(v[5], v[6]);
-            vertlist[(32* 6)+threadIdx.x] = vertexInterolation(v[6], v[7]);
-            vertlist[(32* 7)+threadIdx.x] = vertexInterolation(v[7], v[4]);
-            vertlist[(32* 8)+threadIdx.x] = vertexInterolation(v[0], v[4]);
-            vertlist[(32* 9)+threadIdx.x] = vertexInterolation(v[1], v[5]);
-            vertlist[(32*10)+threadIdx.x] = vertexInterolation(v[2], v[6]);
-            vertlist[(32*11)+threadIdx.x] = vertexInterolation(v[3], v[7]);
+            vertlist[NTHREADS     +threadIdx.x] = vertexInterolation(v[1], v[2]);
+            vertlist[(NTHREADS* 2)+threadIdx.x] = vertexInterolation(v[2], v[3]);
+            vertlist[(NTHREADS* 3)+threadIdx.x] = vertexInterolation(v[3], v[0]);
+            vertlist[(NTHREADS* 4)+threadIdx.x] = vertexInterolation(v[4], v[5]);
+            vertlist[(NTHREADS* 5)+threadIdx.x] = vertexInterolation(v[5], v[6]);
+            vertlist[(NTHREADS* 6)+threadIdx.x] = vertexInterolation(v[6], v[7]);
+            vertlist[(NTHREADS* 7)+threadIdx.x] = vertexInterolation(v[7], v[4]);
+            vertlist[(NTHREADS* 8)+threadIdx.x] = vertexInterolation(v[0], v[4]);
+            vertlist[(NTHREADS* 9)+threadIdx.x] = vertexInterolation(v[1], v[5]);
+            vertlist[(NTHREADS*10)+threadIdx.x] = vertexInterolation(v[2], v[6]);
+            vertlist[(NTHREADS*11)+threadIdx.x] = vertexInterolation(v[3], v[7]);
 
             __syncthreads();
 
@@ -230,13 +243,13 @@ namespace Marching {
                 float3 *v[3];
                 uint edge;
                 edge = tableData.triangles[(cubeIndex*16) + i];
-                v[0] = &vertlist[(edge*32)+threadIdx.x];
+                v[0] = &vertlist[(edge*NTHREADS)+threadIdx.x];
 
                 edge = tableData.triangles[(cubeIndex*16) + i + 1];
-                v[1] = &vertlist[(edge*32)+threadIdx.x];
+                v[1] = &vertlist[(edge*NTHREADS)+threadIdx.x];
 
                 edge = tableData.triangles[(cubeIndex*16) + i + 2];
-                v[2] = &vertlist[(edge*32)+threadIdx.x];
+                v[2] = &vertlist[(edge*NTHREADS)+threadIdx.x];
 
                 // calculate triangle surface normal
                 float3 n = calculateNormal(v[0], v[1], v[2]);
@@ -252,6 +265,60 @@ namespace Marching {
                     vertexData.normals[index+2] = make_float4(n, 0.0f);
                 }
             }
+
+
+            /*float3 vertlist[12];
+
+            vertlist[0] = vertexInterolation(v[0], v[1]);
+            vertlist[1] = vertexInterolation(v[1], v[2]);
+            vertlist[2] = vertexInterolation(v[2], v[3]);
+            vertlist[3] = vertexInterolation(v[3], v[0]);
+
+            vertlist[4] = vertexInterolation(v[4], v[5]);
+            vertlist[5] = vertexInterolation(v[5], v[6]);
+            vertlist[6] = vertexInterolation(v[6], v[7]);
+            vertlist[7] = vertexInterolation(v[7], v[4]);
+
+            vertlist[8] = vertexInterolation(v[0], v[4]);
+            vertlist[9] = vertexInterolation(v[1], v[5]);
+            vertlist[10] = vertexInterolation(v[2], v[6]);
+            vertlist[11] = vertexInterolation(v[3], v[7]);
+
+            // output triangle vertices
+            uint numVerts = tableData.numVertices[cubeIndex];
+
+
+
+            for(int i=0; i<numVerts; i+=3) {
+                uint index = voxelData.verticesScan[voxel] + i;
+
+                float3 *v[3];
+                uint edge;
+                edge = tableData.triangles[(cubeIndex*16) + i];
+                v[0] = &vertlist[edge];
+
+                edge = tableData.triangles[(cubeIndex*16) + i + 1];
+                v[1] = &vertlist[edge];
+
+                edge = tableData.triangles[(cubeIndex*16) + i + 2];
+                v[2] = &vertlist[edge];
+
+                // calculate triangle surface normal
+                float3 n = calculateNormal(v[0], v[1], v[2]);
+
+                if (index < (maxVertices - 3)) {
+                    vertexData.positions[index] = make_float4(*v[0], 1.0f);
+                    vertexData.normals[index] = make_float4(n, 0.0f);
+
+                    vertexData.positions[index+1] = make_float4(*v[1], 1.0f);
+                    vertexData.normals[index+1] = make_float4(n, 0.0f);
+
+                    vertexData.positions[index+2] = make_float4(*v[2], 1.0f);
+                    vertexData.normals[index+2] = make_float4(n, 0.0f);
+                }
+            }
+            */
+
         }
 
         ////////////////////////////////////////////////////////////////////////

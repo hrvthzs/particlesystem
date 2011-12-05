@@ -78,6 +78,15 @@ namespace SPH {
 
             uint sortedIndex = gridData.index[index];
 
+            /*if ((position.y - EPSILON) <= cudaGridParams.min.y) {
+                position.y =  cudaGridParams.min.y + EPSILON;
+            }
+
+            if ((position.y + EPSILON) >= cudaGridParams.max.y) {
+                position.y =  cudaGridParams.max.y - EPSILON;
+            }*/
+
+
             data.position[sortedIndex] = make_float4(position, 1.0f);
             data.velocity[sortedIndex] = make_float4(velocity, 1.0f);
             data.veleval[sortedIndex] = make_float4(veleval, 1.0f);

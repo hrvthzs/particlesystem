@@ -42,6 +42,9 @@ namespace Marching {
     typedef struct sTableData TableData;
     typedef struct sVertexData VertexData;
 
+    #define GRID_OFFSET 1.0f
+    #define NTHREADS 32
+
 }
 
 #endif // __MARCHING_H__

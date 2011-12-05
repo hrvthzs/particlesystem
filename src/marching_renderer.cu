@@ -20,7 +20,12 @@ namespace Marching {
     Renderer::Renderer(Grid::Uniform* grid) {
         this->_grid = grid;
         this->_gridParams = grid->getParams();
-        this->_numCells = grid->getNumCells();
+
+        this->_numCells =
+            (this->_gridParams.resolution.x + GRID_OFFSET) *
+            (this->_gridParams.resolution.y + GRID_OFFSET) *
+            (this->_gridParams.resolution.z + GRID_OFFSET);
+
         this->_maxVertices = 16*this->_numCells;
         this->_createBuffers();
 
@@ -46,10 +51,10 @@ namespace Marching {
     ////////////////////////////////////////////////////////////////////////////
 
     void Renderer::render() {
-        uint numThreads = this->_gridParams.resolution.x;
+        uint numThreads = this->_gridParams.resolution.x + GRID_OFFSET;
         dim3 gridDim(
-            this->_gridParams.resolution.y,
-            this->_gridParams.resolution.z
+            this->_gridParams.resolution.y + GRID_OFFSET,
+            this->_gridParams.resolution.z + GRID_OFFSET
         );
 
         Marching::Kernel::classifyVoxel<<<gridDim, numThreads>>>(
@@ -86,8 +91,6 @@ namespace Marching {
             activeVoxels = lastElement + lastScanElement;
         }
 
-        //cout << "Active voxels:" << activeVoxels << endl;
-
         if (activeVoxels == 0) {
             // return if there are no full voxels
             this->_numVertices = 0;
@@ -108,8 +111,9 @@ namespace Marching {
         {
             uint lastElement, lastScanElement;
             cutilSafeCall(
-                cudaMemcpy((void *) &lastElement,
-                    (void *) (this->_voxelData.compact + this->_numCells-1),
+                cudaMemcpy(
+                    (void *) &lastElement,
+                    (void *) (this->_voxelData.vertices + this->_numCells-1),
                     sizeof(uint),
                     cudaMemcpyDeviceToHost
                 )
@@ -129,8 +133,9 @@ namespace Marching {
         }
 
         //cout << "Num vertices:" << this->_numVertices << endl;
+        //cout << "Active voxels:" << activeVoxels << endl;
 
-        gridDim.x = (int) ceil(activeVoxels / (float) 32);
+        gridDim.x = (int) ceil(activeVoxels / (float) NTHREADS);
         gridDim.y = 1;
         gridDim.z = 1;
 
@@ -139,7 +144,7 @@ namespace Marching {
             gridDim.y*=2;
         }
 
-        Marching::Kernel::generateTriangles<<<gridDim, 32>>>(
+        Marching::Kernel::generateTriangles<<<gridDim, NTHREADS>>>(
             this->_vertexData,
             this->_voxelData,
             this->_tableData,
@@ -151,26 +156,26 @@ namespace Marching {
 
         cutilSafeCall(cutilDeviceSynchronize());
 
-        /*Buffer::Memory<uint>* buffer =
-            new Buffer::Memory<uint>(new Buffer::Allocator(), Buffer::Host);
+        /*Buffer::Memory<int3>* buffer =
+            new Buffer::Memory<int3>(new Buffer::Allocator(), Buffer::Host);
 
         buffer->allocate(this->_numCells);
-        uint* e = buffer->get();
+        int3* e = buffer->get();
 
         cudaMemcpy(
             buffer->get(),
-                this->_voxelData.compact,
-                this->_numCells * sizeof(uint),
-                cudaMemcpyDeviceToHost
+                this->_voxelData.debug,
+                this->_numCells * sizeof(int3),
+                   cudaMemcpyDeviceToHost
             );
 
         for(uint i=0;i<this->_numCells; i++) {
-            cout << e[i] << endl;
+            cout << e[i].x << "," << e[i].y << "," << e[i].z << endl;
         }
-        cout << "______" << endl;
-        */
+        cout << "______" << endl;*/
 
-        Buffer::Memory<float4>* buffer =
+
+        /*Buffer::Memory<float4>* buffer =
         new Buffer::Memory<float4>(new Buffer::Allocator(), Buffer::Host);
 
         buffer->allocate(this->_maxVertices);
@@ -187,7 +192,7 @@ namespace Marching {
             cout << p[i].x << ", " << p[i].y << ", " << p[i].z << "," << p[i].w << endl;
         }
         cout << "______" << endl;
-
+        */
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -318,7 +323,7 @@ namespace Marching {
             );
 
 
-        this->_voxelBuffMan->allocateBuffers(this->_grid->getNumCells());
+        this->_voxelBuffMan->allocateBuffers(this->_numCells);
 
         this->_voxelBuffMan->bindBuffers();
         this->_voxelBuffMan->memsetBuffers(0);
