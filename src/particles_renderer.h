@@ -68,9 +68,9 @@ namespace Particles {
             void _stop();
 
             Simulator* _simulator;
-            ShaderProgram* _shaderProgram;
-            ShaderProgram* _marchingProgram;
-            ShaderProgram* _cubeProgram;
+            Shader::Program* _shaderProgram;
+            Shader::Program* _marchingProgram;
+            Shader::Program* _cubeProgram;
             SDL_Surface* _SDLSurface;
 
             int _windowWidth;

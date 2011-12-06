@@ -12,7 +12,7 @@ namespace Particles {
     Renderer::Renderer(Simulator* simulator) {
         this->_simulator = simulator;
 
-        this->_numParticles = 15000;
+        this->_numParticles = 20000;
 
         this->_animate = false;
         this->_deltaTime = 0.0;
@@ -243,14 +243,23 @@ namespace Particles {
     ////////////////////////////////////////////////////////////////////////////
 
     void Renderer::_onInit() {
-        this->_shaderProgram =
-            new ShaderProgram("shaders/shader.vs", "shaders/shader.fs");
+        this->_shaderProgram = new Shader::Program();
+        this->_shaderProgram
+            ->add(Shader::Vertex, "shaders/shader.vs")
+            ->add(Shader::Fragment, "shaders/shader.fs")
+            ->link();
 
-        this->_marchingProgram =
-            new ShaderProgram("shaders/marching.vs", "shaders/marching.fs");
+        this->_marchingProgram = new Shader::Program();
+        this->_marchingProgram
+            ->add(Shader::Vertex, "shaders/marching.vs")
+            ->add(Shader::Fragment, "shaders/marching.fs")
+            ->link();
 
-        this->_cubeProgram =
-            new ShaderProgram("shaders/cube.vs", "shaders/cube.fs");
+        this->_cubeProgram = new Shader::Program();
+        this->_cubeProgram
+            ->add(Shader::Vertex, "shaders/cube.vs")
+            ->add(Shader::Fragment, "shaders/cube.fs")
+            ->link();
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -320,7 +329,7 @@ namespace Particles {
             glm::vec2(this->_windowWidth, this->_windowHeight);
 
 
-        this->_cubeProgram->use();
+        this->_cubeProgram->enable();
 
         this->_cubeProgram
             ->setUniformMatrix4fv(
@@ -342,7 +351,7 @@ namespace Particles {
         // Set matrices
         if (this->_renderMode == RenderPoints) {
 
-            this->_shaderProgram->use();
+            this->_shaderProgram->enable();
 
             this->_shaderProgram
                 ->setUniformMatrix4fv(
@@ -376,7 +385,7 @@ namespace Particles {
             glDrawArrays(GL_POINTS, 0, this->_numParticles);
         } else {
 
-            this->_marchingProgram->use();
+            this->_marchingProgram->enable();
 
             this->_marchingProgram
                 ->setUniformMatrix4fv(

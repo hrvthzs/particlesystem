@@ -42,7 +42,7 @@ namespace SPH {
             ->insert(GridSize, "Grid size", 2.0f)
             ->insert(Timestep, "Timestep", 0.0f, 1.0f, 0.01f)
             ->insert(RestDensity, "Rest density", 0.0f, 10000.0f, 2000.0f)
-            ->insert(RestPressure, "Rest pressure", 0.0f, 10000.0f, 0.0f)
+            ->insert(RestPressure, "Rest pressure", 0.0f, 10000.0f, 500.0f)
             ->insert(GasStiffness, "Gas Stiffness", 0.001f, 10.0f, 1.0f)
             ->insert(Viscosity, "Viscosity", 0.0f, 100.0f, 1.0f)
             ->insert(BoundaryDampening, "Bound. damp.", 0.0f, 10000.0f, 256.0f)
