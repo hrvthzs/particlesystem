@@ -92,7 +92,8 @@ namespace Grid {
                 }
 
                 // debug
-                data.sorted.neighbours[index] += 1.0f;
+                //data.sorted.neighbours[index] += 1.0f;
+
             }
         }
 

@@ -42,7 +42,7 @@ namespace SPH {
             ->insert(GridSize, "Grid size", 2.0f)
             ->insert(Timestep, "Timestep", 0.0f, 1.0f, 0.01f)
             ->insert(RestDensity, "Rest density", 0.0f, 10000.0f, 2000.0f)
-            ->insert(RestPressure, "Rest pressure", 0.0f, 10000.0f, 500.0f)
+            ->insert(RestPressure, "Rest pressure", 0.0f, 10000.0f, 1000.0f)
             ->insert(GasStiffness, "Gas Stiffness", 0.001f, 10.0f, 1.0f)
             ->insert(Viscosity, "Viscosity", 0.0f, 100.0f, 1.0f)
             ->insert(BoundaryDampening, "Bound. damp.", 0.0f, 10000.0f, 256.0f)
@@ -297,15 +297,16 @@ namespace SPH {
         }*/
 
         GridParams params = this->_grid->getParams();
+        float centering = this->_database->selectValue(CellSize) / 2.0f;
 
         for (uint x=0; x<resolution; x++) {
             for (uint y=0; y<resolution; y++) {
                 for (uint z=0; z<resolution; z++) {
                     uint index = x + y*resolution + z*resolution*resolution;
                     if (index < this->_numParticles) {
-                        positions[index].x = 2.0 / resolution * (x+1) - 1.0;
-                        positions[index].y = 2.0 / resolution * (y+1) - 1.0;
-                        positions[index].z = 1.0 / resolution * (z+1) - 1.0;
+                        positions[index].x = 2.0 / resolution * (x+1) - 1.0 - centering;
+                        positions[index].y = 2.0 / resolution * (y+1) - 1.0 - centering;
+                        positions[index].z = 1.0 / resolution * (z+1) - 1.0 - centering;
                         positions[index].w = 1.0;
 
                         if (this->_fluidParams.dynamicColoring)
@@ -322,6 +323,10 @@ namespace SPH {
                 }
             }
         }
+
+        positions[0].x = 0.0f;
+        positions[0].y = 0.0f;
+        positions[0].z = 0.0f;
 
         /*positions[0].x = -0.8549;
         positions[0].y = 0.6905;
@@ -468,6 +473,7 @@ namespace SPH {
         Buffer::Memory<float>*  pressure = new Buffer::Memory<float>();
         Buffer::Memory<float4>* veleval  = new Buffer::Memory<float4>();
         Buffer::Memory<float4>* velocity = new Buffer::Memory<float4>();
+        // debug
         Buffer::Memory<float>* neighb    = new Buffer::Memory<float>();
         Buffer::Memory<int3>* cellPos   = new Buffer::Memory<int3>();
 
@@ -478,6 +484,7 @@ namespace SPH {
         Buffer::Memory<float>*  sPressure = new Buffer::Memory<float>();
         Buffer::Memory<float4>* sVeleval  = new Buffer::Memory<float4>();
         Buffer::Memory<float4>* sVelocity = new Buffer::Memory<float4>();
+        //debug
         Buffer::Memory<float>* sNeighb    = new Buffer::Memory<float>();
         Buffer::Memory<int3>* sCellPos   = new Buffer::Memory<int3>();
 

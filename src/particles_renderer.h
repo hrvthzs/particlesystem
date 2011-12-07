@@ -68,9 +68,12 @@ namespace Particles {
             void _stop();
 
             Simulator* _simulator;
+
             Shader::Program* _shaderProgram;
             Shader::Program* _marchingProgram;
             Shader::Program* _cubeProgram;
+            Shader::Program* _tesselationProgram;
+
             SDL_Surface* _SDLSurface;
 
             int _windowWidth;
@@ -84,6 +87,9 @@ namespace Particles {
             float _translationZ;
 
             RenderMode _renderMode;
+
+            uint _tessLevelInner;
+            uint _tessLevelOuter;
 
             ////////////////////////////////////////////////////////////////////
             // TEMPORARY SOLUTION

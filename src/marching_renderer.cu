@@ -156,24 +156,39 @@ namespace Marching {
 
         cutilSafeCall(cutilDeviceSynchronize());
 
-        /*Buffer::Memory<int3>* buffer =
-            new Buffer::Memory<int3>(new Buffer::Allocator(), Buffer::Host);
+        /*Buffer::Memory<uint>* buffer1 =
+            new Buffer::Memory<uint>(new Buffer::Allocator(), Buffer::Host);
+        Buffer::Memory<uint>* buffer2 =
+            new Buffer::Memory<uint>(new Buffer::Allocator(), Buffer::Host);
 
-        buffer->allocate(this->_numCells);
-        int3* e = buffer->get();
+        buffer1->allocate(this->_grid->getNumCells());
+        buffer2->allocate(this->_grid->getNumCells());
+
+        uint* p1 = buffer1->get();
+        uint* p2 = buffer2->get();
 
         cudaMemcpy(
-            buffer->get(),
-                this->_voxelData.debug,
-                this->_numCells * sizeof(int3),
-                   cudaMemcpyDeviceToHost
-            );
+            buffer1->get(),
+            this->_grid->getData().cellStart,
+            this->_grid->getNumCells() * sizeof(uint),
+            cudaMemcpyDeviceToHost
+        );
 
-        for(uint i=0;i<this->_numCells; i++) {
-            cout << e[i].x << "," << e[i].y << "," << e[i].z << endl;
+        cudaMemcpy(
+            buffer2->get(),
+            this->_grid->getData().cellStop,
+            this->_grid->getNumCells() * sizeof(uint),
+            cudaMemcpyDeviceToHost
+        );
+
+        for(uint i=0;i<this->_grid->getNumCells(); i++) {
+            //cout << e[i].x << "," << e[i].y << "," << e[i].z << endl;
+            if (p1[i] != EMPTY_CELL_VALUE) {
+                cout << p2[i] - p1[i] << endl;
+            }
         }
-        cout << "______" << endl;*/
-
+        cout << "______" << endl;
+        */
 
         /*Buffer::Memory<float4>* buffer =
         new Buffer::Memory<float4>(new Buffer::Allocator(), Buffer::Host);

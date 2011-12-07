@@ -12,7 +12,7 @@ namespace Particles {
     Renderer::Renderer(Simulator* simulator) {
         this->_simulator = simulator;
 
-        this->_numParticles = 20000;
+        this->_numParticles = 15000;
 
         this->_animate = false;
         this->_deltaTime = 0.0;
@@ -30,6 +30,9 @@ namespace Particles {
 
         this->_renderMode = RenderPoints;
 
+        this->_tessLevelInner = 2;
+        this->_tessLevelOuter = 3;
+
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -38,6 +41,7 @@ namespace Particles {
         delete this->_simulator;
         delete this->_shaderProgram;
         delete this->_marchingProgram;
+        delete this->_tesselationProgram;
         delete this->_cubeProgram;
     }
 
@@ -243,6 +247,7 @@ namespace Particles {
     ////////////////////////////////////////////////////////////////////////////
 
     void Renderer::_onInit() {
+
         this->_shaderProgram = new Shader::Program();
         this->_shaderProgram
             ->add(Shader::Vertex, "shaders/shader.vs")
@@ -259,6 +264,15 @@ namespace Particles {
         this->_cubeProgram
             ->add(Shader::Vertex, "shaders/cube.vs")
             ->add(Shader::Fragment, "shaders/cube.fs")
+            ->link();
+
+        this->_tesselationProgram = new Shader::Program();
+        this->_tesselationProgram
+            ->add(Shader::Vertex, "shaders/marching_tess.vs")
+            ->add(Shader::Geometry, "shaders/marching_tess.gs")
+            ->add(Shader::Control, "shaders/marching_tess.cs")
+            ->add(Shader::Evaluation, "shaders/marching_tess.es")
+            ->add(Shader::Fragment, "shaders/marching_tess.fs")
             ->link();
     }
 
@@ -383,7 +397,7 @@ namespace Particles {
             );
 
             glDrawArrays(GL_POINTS, 0, this->_numParticles);
-        } else {
+        } else if (this->_renderMode == RenderMarching){
 
             this->_marchingProgram->enable();
 
@@ -412,10 +426,35 @@ namespace Particles {
 
             glDrawArrays(GL_TRIANGLES, 0, this->_simulator->getNumVertices());
 
+        } else {
+            // Tesselation
+            this->_tesselationProgram->enable();
+
+            this->_tesselationProgram
+                ->setUniform1f("TessLevelInner", this->_tessLevelInner)
+                ->setUniform1f("TessLevelOuter", this->_tessLevelOuter)
+                ->setUniformMatrix4fv(
+                    "mvp", 1, GL_FALSE, glm::value_ptr(mvp)
+                )
+                ->setUniformMatrix3fv(
+                    "mn", 1, GL_FALSE, glm::value_ptr(mn)
+                )
+                ->setUniform3f("LightPosition", 0.0f, 2.0f, 0.0f)
+                ->setUniform3f("DiffuseMaterial", 0, 0.75, 0.75)
+                ->setUniform3f("AmbientMaterial", 0.04f, 0.04f, 0.04f);
+
+            // Draw data
+            glBindBuffer(GL_ARRAY_BUFFER, this->_simulator->getPositionsVBO());
+            this->_tesselationProgram->setAttribute(
+                "Position", 4, GL_FLOAT, GL_FALSE, 0, (void*) 0
+            );
+            glPatchParameteri(GL_PATCH_VERTICES, 3);
+            glDrawArrays(GL_PATCHES, 0, this->_simulator->getNumVertices());
+
         }
 
         glDisable(GL_POINT_SPRITE_ARB);
-        glDisable(GL_VERTEX_PROGRAM_POINT_SIZE_NV);
+        glDisable(GL_VERTEX_PROGRAM_POINT_SIZE);
         SDL_GL_SwapBuffers();
 
         this->_deltaTime += 0.01f;
@@ -426,7 +465,7 @@ namespace Particles {
 
     void Renderer::_onKeyDown(
         SDLKey key,
-        Uint16 //mod
+        Uint16 modifier
     ) {
         switch(key) {
             case SDLK_ESCAPE:
@@ -452,6 +491,28 @@ namespace Particles {
             case SDLK_m:
                 this->_renderMode = RenderMarching;
                 this->_simulator->setRenderMode(this->_renderMode);
+                break;
+            case SDLK_t:
+                this->_renderMode = RenderTesselation;
+                this->_simulator->setRenderMode(RenderMarching);
+                break;
+            case SDLK_w:
+                if (modifier & KMOD_LCTRL) {
+                    this->_tessLevelInner++;
+                } else {
+                    this->_tessLevelOuter++;
+                }
+                break;
+            case SDLK_q:
+                if (modifier & KMOD_LCTRL) {
+                    if (this->_tessLevelInner > 1) {
+                        this->_tessLevelInner--;
+                    }
+                } else {
+                    if(this->_tessLevelOuter > 1) {
+                        this->_tessLevelOuter--;
+                    }
+                }
                 break;
             default:
                 break;
