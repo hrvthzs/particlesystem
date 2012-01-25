@@ -77,7 +77,7 @@ namespace SPH {
                     ) *
                     SPH::Kernels::Spiky::getGradientVariable(
                         cudaFluidParams.smoothingLength,
-                        r,
+                        r/rLen,
                         rLen
                     );
 
