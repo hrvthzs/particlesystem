@@ -62,15 +62,15 @@ namespace SPH {
                     cudaFluidParams.frictionStaticLimit,
                     cudaFluidParams.scaleToSimulation);
 
-            float3 f = force + externalForce;
+            force += externalForce;
 
             float speed = length(force);
 
             if (speed > cudaFluidParams.velocityLimit) {
-                f *= cudaFluidParams.velocityLimit / speed;
+                force *= cudaFluidParams.velocityLimit / speed;
             }
 
-            float3 vnext = velocity + f * deltaTime;
+            float3 vnext = velocity + force * deltaTime;
             veleval = (velocity + vnext) * 0.5f;
             velocity = veleval;
 
