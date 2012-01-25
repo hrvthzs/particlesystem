@@ -39,43 +39,40 @@ namespace SPH {
         // DATABASE
         this->_database
             ->insert(ParticleNumber, "Particles", this->_numParticles)
-            ->insert(GridSize, "Grid size", 2.0f)
-            ->insert(Timestep, "Timestep", 0.0f, 1.0f, 0.01f)
-            ->insert(RestDensity, "Rest density", 0.0f, 10000.0f, 2000.0f)
-            ->insert(RestPressure, "Rest pressure", 0.0f, 10000.0f, 1000.0f)
-            ->insert(GasStiffness, "Gas Stiffness", 0.001f, 10.0f, 1.0f)
-            ->insert(Viscosity, "Viscosity", 0.0f, 100.0f, 1.0f)
+            ->insert(GridSize, "Grid size", 1.0f)
+            ->insert(Timestep, "Timestep", 0.0f, 1.0f, 0.001f)
+            ->insert(RestDensity, "Rest density", 0.0f, 10000.0f, 1000.0f)
+            ->insert(RestPressure, "Rest pressure", 0.0f, 10000.0f, 0.0f)
+            ->insert(GasStiffness, "Gas Stiffness", 0.001f, 10.0f, 10.0f)
+            ->insert(Viscosity, "Viscosity", 0.0f, 100.0f, 6.0f)
             ->insert(BoundaryDampening, "Bound. damp.", 0.0f, 10000.0f, 256.0f)
-            ->insert(BoundaryStiffness, "Bound. stiff.", 0.0f, 100000.0f, 20000.0f)
-            ->insert(VelocityLimit, "Veloc. limit", 0.0f, 10000.0f, 600.0f)
-            ->insert(SimulationScale, "Sim. scale", 0.0f, 1.0f, 1.0f)
+            ->insert(BoundaryStiffness, "Bound. stiff.", 0.0f, 100000.0f, 2000.0f)
+            ->insert(VelocityLimit, "Veloc. limit", 0.0f, 10000.0f, 500.0f)
+            ->insert(SimulationScale, "Sim. scale", 0.0f, 1.0f, 0.25f)
             ->insert(KineticFriction, "Kinet. fric.", 0.0f, 10000.0f, 0.0f)
             ->insert(StaticFrictionLimit, "Stat. Fric. Lim.", 0.0f, 10000.0f, 0.0f)
             ->insert(DynamicColoring, "DynamicColoring", 0.0f, true);
 
-            uint n = this->_numParticles;
 
-            this->_numParticles *= 4;
-
-            float particleMass =
-                ((128.0f * 1024.0f ) / this->_numParticles) * 0.0002f * 0.0005;
-            float particleRestDist =
-                0.87f *
+            float particleMass = 0.006;
+            float particleRestDist = 1.0/6.0;
+                /*0.87f *
                 pow(
                     particleMass / this->_database->selectValue(RestDensity),
                     1.0f/3.0f
-                );
+                );*/
 
             // if boundary distance is too small particles can drop off the grid
             // for only a small distance but for marching cubes this is not
             // acceptable
-            float boundaryDist = 0.05; //10 * particleRestDist;
+
             //float smoothingLength = pow(this->_numParticles, 1.0/3.0)*1.2;//2.0 * particleRestDist;
-            float cellSize = 2.0/pow(this->_numParticles, 1.0/3.0);
+            float cellSize = 2.0 * particleRestDist;
+            float boundaryDist = cellSize; //10 * particleRestDist;
             //float cellSize = 1.0;
             // maybe 2 x cellSize is the ideal value for smoothing length
             // but not only if simulation scale is 1
-            float smoothingLength = cellSize*1.9;//2.0 * particleRestDist;
+            float smoothingLength = cellSize;//2.0 * particleRestDist;
                 //smoothingLength * this->_database->selectValue(SimulationScale);
 
         this->_database
@@ -86,8 +83,6 @@ namespace SPH {
             ->insert(CellSize, "Cell size", cellSize);
 
         this->_database->print();
-
-        this->_numParticles = n;
 
         this->_grid = new Grid::Uniform();
         this->_grid->allocate(
@@ -304,9 +299,9 @@ namespace SPH {
                 for (uint z=0; z<resolution; z++) {
                     uint index = x + y*resolution + z*resolution*resolution;
                     if (index < this->_numParticles) {
-                        positions[index].x = 2.0 / resolution * (x+1) - 1.0 - centering;
-                        positions[index].y = 2.0 / resolution * (y+1) - 1.0 - centering;
-                        positions[index].z = 1.0 / resolution * (z+1) - 1.0 - centering;
+                        positions[index].x = 1.0 / resolution * (x+1) - 0.5 - centering;
+                        positions[index].y = 1.0 / resolution * (y+1) - 0.5 - centering;
+                        positions[index].z = 1.0 / resolution * (z+1) - 0.5 - centering;
                         positions[index].w = 1.0;
 
                         if (this->_fluidParams.dynamicColoring)
@@ -324,10 +319,10 @@ namespace SPH {
             }
         }
 
-        positions[0].x = 0.0f;
+        /*positions[0].x = 0.0f;
         positions[0].y = 0.0f;
         positions[0].z = 0.0f;
-
+        */
         /*positions[0].x = -0.8549;
         positions[0].y = 0.6905;
         positions[0].z = 0.8506;*/
@@ -629,7 +624,7 @@ namespace SPH {
         // PRECALCULATED PARAMETERS
         float smoothLen = this->_fluidParams.smoothingLength;
 
-        this->_precalcParams.smoothLenSq = pow(smoothLen, 2);
+        this->_precalcParams.smoothLenSq = smoothLen * smoothLen;
 
         this->_precalcParams.poly6Coeff =
             Kernels::Poly6::getConstant(smoothLen);
@@ -641,10 +636,10 @@ namespace SPH {
             Kernels::Viscosity::getLaplacianConstant(smoothLen);
 
         this->_precalcParams.pressurePrecalc =
-            this->_precalcParams.spikyGradCoeff;
+            -this->_precalcParams.spikyGradCoeff;
 
         this->_precalcParams.viscosityPrecalc =
-            this->_fluidParams.viscosity *
+            -this->_fluidParams.viscosity *
             this->_precalcParams.viscosityLapCoeff;
 
         // DEBUG

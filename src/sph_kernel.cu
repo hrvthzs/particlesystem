@@ -40,7 +40,7 @@ namespace SPH {
             //float pressure = sortedData.pressure[index];
 
             float3 externalForce = make_float3(0.0f, 0.0f, 0.0f);
-            externalForce.y -= 9.8f;
+            //externalForce.y -= 9.8f;
 
             // add no-penetration force due to "walls"
             externalForce += Boundary::Walls::calculateWallsNoPenetrationForce(
@@ -49,19 +49,17 @@ namespace SPH {
                     cudaGridParams.max,
                     cudaFluidParams.boundaryDistance,
                     cudaFluidParams.boundaryStiffness,
-                    cudaFluidParams.boundaryDampening,
-                    cudaFluidParams.scaleToSimulation);
+                    cudaFluidParams.boundaryDampening);
 
             // add no-slip force due to "walls"
-            externalForce += Boundary::Walls::calculateWallsNoSlipForce(
+            /*externalForce += Boundary::Walls::calculateWallsNoSlipForce(
                     position, veleval, force + externalForce,
                     cudaGridParams.min,
                     cudaGridParams.max,
                     cudaFluidParams.boundaryDistance,
                     cudaFluidParams.frictionKinetic/deltaTime,
-                    cudaFluidParams.frictionStaticLimit,
-                    cudaFluidParams.scaleToSimulation);
-
+                    cudaFluidParams.frictionStaticLimit);
+            */
             float3 f = force + externalForce;
 
             float speed = length(force);
@@ -71,10 +69,10 @@ namespace SPH {
             }
 
             float3 vnext = velocity + f * deltaTime;
-            veleval = (velocity + vnext) * 0.5f;
+            veleval = vnext;//(velocity + vnext) * 0.5f;
             velocity = veleval;
 
-            position += vnext * (deltaTime / cudaFluidParams.scaleToSimulation);
+            position += vnext * deltaTime;
 
             uint sortedIndex = gridData.index[index];
 

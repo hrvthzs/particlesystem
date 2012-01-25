@@ -54,7 +54,7 @@ namespace SPH {
                 data.densityN  = data.sorted.density[indexN];
                 data.pressureN = data.sorted.pressure[indexN];
 
-                /*data.pressureForce  +=
+                data.pressureForce  +=
                     (
                         (data.pressure + data.pressureN) /
                         (data.densityN * data.density)
@@ -64,8 +64,8 @@ namespace SPH {
                         r,
                         rLen
                     );
-                */
-                data.pressureForce +=
+
+                /*data.pressureForce +=
                     (
                         (
                             data.pressure/
@@ -80,7 +80,7 @@ namespace SPH {
                         r,
                         rLen
                     );
-
+                */
                 /*data.pressureForce +=
                     (
                         (data.pressure + data.pressureN) /

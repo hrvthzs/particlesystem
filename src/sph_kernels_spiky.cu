@@ -24,7 +24,7 @@ class Spiky {
         static __device__ __host__
         float3 getGradientVariable(float smoothLen, float3 r, float rLen) {
             float variable = smoothLen - rLen;
-            return r * (1.0f / rLen) * (variable * variable);
+            return r * (variable * variable);
         }
 
 
