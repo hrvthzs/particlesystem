@@ -12,7 +12,7 @@ namespace Particles {
     Renderer::Renderer(Simulator* simulator) {
         this->_simulator = simulator;
 
-        this->_numParticles = 15000;
+        this->_numParticles = 25000;
 
         this->_animate = false;
         this->_deltaTime = 0.0;
@@ -287,27 +287,9 @@ namespace Particles {
     ////////////////////////////////////////////////////////////////////////////
 
     void Renderer::_onWindowRedraw() {
-
-
-        if (this->_animate) {
-            //this->_particleSystem->update(0.05f);
-            this->_simulator->update();
-        } else {
-            //this->_runCuda();
-
-        }
-
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        glEnable(GL_DEPTH_TEST);
-        glCullFace(GL_BACK);
-        glEnable(GL_CULL_FACE);
-
-        glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
-
         // Calculate ModelViewProjection matrix
         glm::mat4 projection =
-            glm::perspective(45.0f, this->_aspectRatio, 0.0001f, 1000.0f);
+        glm::perspective(45.0f, this->_aspectRatio, 0.0001f, 1000.0f);
 
         glm::mat4 mv = glm::rotate(
             glm::rotate(
@@ -322,8 +304,22 @@ namespace Particles {
             glm::vec3(0, 1, 0)
         );
 
+        glm::vec4 gravity = glm::vec4(0,-9.8,0,0);
+
+        gravity = mv*gravity;
         glm::mat4 mvp = projection*mv;
 
+        if (this->_animate) {
+            this->_simulator->update(gravity.x, gravity.y, gravity.z);
+        }
+
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        glEnable(GL_DEPTH_TEST);
+        glCullFace(GL_BACK);
+        glEnable(GL_CULL_FACE);
+
+        glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
 
         this->_shaderProgram->use();
 

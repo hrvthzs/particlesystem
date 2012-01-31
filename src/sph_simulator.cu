@@ -42,15 +42,15 @@ namespace SPH {
         // DATABASE
         this->_database
             ->insert(ParticleNumber, "Particles", this->_numParticles)
-            ->insert(GridSize, "Grid size", 2.0f)
+            ->insert(GridSize, "Grid size", 3.0f)
             ->insert(Timestep, "Timestep", 0.0f, 1.0f, 0.01f)
-            ->insert(RestDensity, "Rest density", 0.0f, 10000.0f, 2000.0f)
+            ->insert(RestDensity, "Rest density", 0.0f, 10000.0f, 5000.0f) // step 1000
             ->insert(RestPressure, "Rest pressure", 0.0f, 10000.0f, 0.0f)
             ->insert(GasStiffness, "Gas Stiffness", 0.001f, 10.0f, 1.0f)
-            ->insert(Viscosity, "Viscosity", 0.0f, 100.0f, 1.0f)
+            ->insert(Viscosity, "Viscosity", 0.0f, 100.0f, 1.0f) // step 0.1
             ->insert(BoundaryDampening, "Bound. damp.", 0.0f, 10000.0f, 256.0f)
             ->insert(BoundaryStiffness, "Bound. stiff.", 0.0f, 100000.0f, 20000.0f)
-            ->insert(VelocityLimit, "Veloc. limit", 0.0f, 10000.0f, 600.0f)
+            ->insert(VelocityLimit, "Veloc. limit", 0.0f, 10000.0f, 500.0f)
             ->insert(SimulationScale, "Sim. scale", 0.0f, 1.0f, 1.0f)
             ->insert(KineticFriction, "Kinet. fric.", 0.0f, 10000.0f, 0.0f)
             ->insert(StaticFrictionLimit, "Stat. Fric. Lim.", 0.0f, 10000.0f, 0.0f)
@@ -60,8 +60,8 @@ namespace SPH {
 
             this->_numParticles *= 4;
 
-            float particleMass =
-                ((128.0f * 1024.0f ) / this->_numParticles) * 0.0002f * 0.0005;
+            float particleMass = 1.0 * pow(10, -7);
+                //((128.0f * 1024.0f ) / this->_numParticles) * 0.0002f * 0.0005;
             float particleRestDist =
                 0.87f *
                 pow(
@@ -70,10 +70,10 @@ namespace SPH {
                 );
             float boundaryDist = 1.5 * particleRestDist;
             //float smoothingLength = pow(this->_numParticles, 1.0/3.0)*1.2;//2.0 * particleRestDist;
-            float cellSize = 2.0/pow(this->_numParticles, 1.0/3.0);
+            float cellSize = 0.1;//pow(this->_numParticles, 1.0/3.0);
             // maybe 2 x cellSize is the ideal value for smoothing length
             // but not only if simulation scale is 1
-            float smoothingLength = cellSize*1.9;//2.0 * particleRestDist;
+            float smoothingLength = cellSize;//2.0 * particleRestDist;
                 //smoothingLength * this->_database->selectValue(SimulationScale);
 
         this->_database
@@ -163,7 +163,7 @@ namespace SPH {
 
     ////////////////////////////////////////////////////////////////////////////
 
-    void Simulator::integrate(int numParticles, float deltaTime) {
+    void Simulator::integrate(int numParticles, float deltaTime, float3 gravity) {
         uint minBlockSize, numBlocks, numThreads;
         minBlockSize = 416;
         Utils::computeGridSize(numParticles, minBlockSize, numBlocks, numThreads);
@@ -171,6 +171,7 @@ namespace SPH {
         Kernel::integrate<Data><<<numBlocks, numThreads>>>(
             numParticles,
             deltaTime,
+            gravity,
             this->_particleData,
             this->_sortedData,
             this->_grid->getData()
@@ -180,12 +181,14 @@ namespace SPH {
 
     ////////////////////////////////////////////////////////////////////////////
 
-    void Simulator::update() {
+    void Simulator::update(float x, float y, float z) {
+        float3 gravity = make_float3(x, y, z);
+
         this->_grid->hash((float4*) this->getPositions());
         this->_grid->sort();
         this->_orderData();
 
-        Buffer::Memory<float>* buffer =
+        /*Buffer::Memory<float>* buffer =
             new Buffer::Memory<float>(new Buffer::Allocator(), Buffer::Host);
 
         buffer->allocate(this->_numParticles);
@@ -195,15 +198,15 @@ namespace SPH {
         cudaMemcpy(buffer->get(), this->_sortedData.neighbours, this->_numParticles * sizeof(float), cudaMemcpyDeviceToHost);
 
         float* e = buffer->get();
-
-        /*Buffer::Memory<float4>* posBuffer =
+        */
+        Buffer::Memory<float4>* posBuffer =
             new Buffer::Memory<float4>(new Buffer::Allocator(), Buffer::Host);
 
         posBuffer->allocate(this->_numParticles);
 
-        cudaMemcpy(posBuffer->get(), this->_sortedData.force, this->_numParticles * sizeof(float4), cudaMemcpyDeviceToHost);
+        cudaMemcpy(posBuffer->get(), this->_sortedData.viscosity, this->_numParticles * sizeof(float4), cudaMemcpyDeviceToHost);
         float4* pos = posBuffer->get();
-        */
+
         /*Buffer::Memory<int3>* cellBuffer =
         new Buffer::Memory<int3>(new Buffer::Allocator(), Buffer::Host);
 
@@ -213,24 +216,28 @@ namespace SPH {
         int3* cell = cellBuffer->get();
         */
         //cutilSafeCall(cutilDeviceSynchronize());
-        /*int c = 0;
-        for(uint i=0;i< this->_numParticles; i++) {
+        //int c = 0;
+        /*for(uint i=0;i< this->_numParticles; i++) {
             //cout << e[i] << " " << pos[i].x << " " << pos[i].y << " " << pos[i].z << endl;
-            //cout << pos[i].x << " " << pos[i].y << " " << pos[i].z << endl;
+            cout << pos[i].x << " " << pos[i].y << " " << pos[i].z << endl;
             //cout << e[i] << " " << cell[i].x << " " << cell[i].y << " " << cell[i].z << endl;
             //cout << e[i] << endl;
-            if (e[i] < 18) c++;
+            //if (e[i] < 18) c++;
             //cout << "-----" << endl;
-        }*/
+        }
 
-        //std::cout << "____________________" << std::endl;
+        std::cout << "____________________" << std::endl;
         //std::cout << c << std::endl;
-
+        */
 
 
         this->_step1();
         this->_step2();
-        this->integrate(this->_numParticles, this->_database->selectValue(Timestep));
+        this->integrate(
+            this->_numParticles,
+            this->_database->selectValue(Timestep),
+            gravity
+        );
 
         //cutilSafeCall(cutilDeviceSynchronize());
     }
@@ -285,8 +292,8 @@ namespace SPH {
                 for (uint z=0; z<resolution; z++) {
                     uint index = x + y*resolution + z*resolution*resolution;
                     if (index < this->_numParticles) {
-                        positions[index].x = 2.0 / resolution * (x+1) - 1.0;
-                        positions[index].y = 2.0 / resolution * (y+1) - 1.0;
+                        positions[index].x = 1.0 / resolution * (x+1) - 1.0;
+                        positions[index].y = 2.0 / resolution * (y+1) - 1.5;
                         positions[index].z = 1.0 / resolution * (z+1) - 1.0;
                         positions[index].w = 1.0;
 
@@ -340,8 +347,9 @@ namespace SPH {
         Buffer::Memory<float>*  pressure = new Buffer::Memory<float>();
         Buffer::Memory<float4>* veleval  = new Buffer::Memory<float4>();
         Buffer::Memory<float4>* velocity = new Buffer::Memory<float4>();
-        Buffer::Memory<float>* neighb    = new Buffer::Memory<float>();
-        Buffer::Memory<int3>* cellPos   = new Buffer::Memory<int3>();
+        Buffer::Memory<float>*  neighb    = new Buffer::Memory<float>();
+        Buffer::Memory<int3>*   cellPos   = new Buffer::Memory<int3>();
+        Buffer::Memory<float4>* viscosity = new Buffer::Memory<float4>();
 
         Buffer::Vertex<float4>* sColor    = new Buffer::Vertex<float4>();
         Buffer::Memory<float>*  sDensity  = new Buffer::Memory<float>();
@@ -352,6 +360,7 @@ namespace SPH {
         Buffer::Memory<float4>* sVelocity = new Buffer::Memory<float4>();
         Buffer::Memory<float>* sNeighb    = new Buffer::Memory<float>();
         Buffer::Memory<int3>* sCellPos   = new Buffer::Memory<int3>();
+        Buffer::Memory<float4>* sViscosity = new Buffer::Memory<float4>();
 
         this->_positionsVBO = position->getVBO();
         this->_colorsVBO = color->getVBO();
@@ -374,7 +383,9 @@ namespace SPH {
             ->addBuffer(Neighb,           (Buffer::Abstract<void>*) neighb)
             ->addBuffer(SortedNeighb,     (Buffer::Abstract<void>*) sNeighb)
             ->addBuffer(CellPos,          (Buffer::Abstract<void>*) cellPos)
-            ->addBuffer(SortedCellPos,    (Buffer::Abstract<void>*) sCellPos);
+            ->addBuffer(SortedCellPos,    (Buffer::Abstract<void>*) sCellPos)
+            ->addBuffer(Viscosities,       (Buffer::Abstract<void>*) viscosity)
+            ->addBuffer(SortedViscosities, (Buffer::Abstract<void>*) sViscosity);
 
         this->_bufferManager->allocateBuffers(this->_numParticles);
 
@@ -402,6 +413,7 @@ namespace SPH {
         this->_particleData.velocity = velocity->get();
         this->_particleData.neighbours = neighb->get();
         this->_particleData.cellPos = cellPos->get();
+        this->_particleData.viscosity = viscosity->get();
 
         this->_sortedData.color    = sColor->get();
         this->_sortedData.density  = sDensity->get();
@@ -412,6 +424,7 @@ namespace SPH {
         this->_sortedData.velocity = sVelocity->get();
         this->_sortedData.neighbours = sNeighb->get();
         this->_sortedData.cellPos = sCellPos->get();
+        this->_sortedData.viscosity = sViscosity->get();
 
         this->_bufferManager->unbindBuffers();
     }

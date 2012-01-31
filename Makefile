@@ -46,6 +46,7 @@ CUFILES		:= \
 
 # CUDA dependency files
 CU_DEPS		:= \
+	src/colors.cu \
 	src/boundary.cu \
 	src/boundary_walls.cu \
 	src/grid_utils.cu \

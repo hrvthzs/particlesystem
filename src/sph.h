@@ -25,7 +25,9 @@ namespace SPH {
         Neighb,
         SortedNeighb,
         CellPos,
-        SortedCellPos
+        SortedCellPos,
+        Viscosities,
+        SortedViscosities
     };
 
     struct sData : public Particles::Data {
@@ -39,9 +41,12 @@ namespace SPH {
         // pressure at particle position
         float* pressure;
 
+        // debug
         float *neighbours;
 
         int3 *cellPos;
+
+        float4* viscosity;
 
     };
 

@@ -31,13 +31,13 @@ namespace SPH {
             /**
              *
              */
-            void update();
+            void update(float x, float y, float z);
             float* getPositions();
             float* getColors();
             void bindBuffers();
             void unbindBuffers();
 
-            void integrate (int numParticles, float deltaTime);
+            void integrate (int numParticles, float deltaTime, float3 gravity);
             //virtual Buffer::Vertex<float>* getPositionsBuffer();
 
             void valueChanged(Settings::RecordType type);

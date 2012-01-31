@@ -10,6 +10,7 @@ __constant__ SPH::PrecalcParams  cudaPrecalcParams;
 #include "sph_density.cu"
 #include "sph_force.cu"
 #include "sph_neighbours.cu"
+#include "colors.cu"
 
 using namespace Grid::Utils;
 
@@ -23,6 +24,7 @@ namespace SPH {
         __global__ void integrate(
             int numParticles,
             float deltaTime,
+            float3 gravity,
             D data,
             D sortedData,
             GridData gridData
@@ -37,10 +39,9 @@ namespace SPH {
             float3 veleval = make_float3(sortedData.veleval[index]);
 
             float3 force = make_float3(sortedData.force[index]);
-            //float pressure = sortedData.pressure[index];
+            float pressure = sortedData.pressure[index];
 
-            float3 externalForce = make_float3(0.0f, 0.0f, 0.0f);
-            externalForce.y -= 9.8f;
+            float3 externalForce = gravity;
 
             // add no-penetration force due to "walls"
             externalForce += Boundary::Walls::calculateWallsNoPenetrationForce(
@@ -108,7 +109,15 @@ namespace SPH {
             data.veleval[sortedIndex] = make_float4(veleval, 1.0f);
 
             if (cudaFluidParams.dynamicColoring) {
-                float3 color = (position - cudaGridParams.min) / cudaGridParams.size;
+                //float3 color = (position - cudaGridParams.min) / cudaGridParams.size;
+                float3 color =
+                    Colors::calculateColor(
+                        Colors::HSVBlueToRed,
+                        Colors::Velocity,
+                        vnext,
+                        pressure,
+                        force
+                    );
                 data.color[sortedIndex] = make_float4(color, 1.0f);
             }
 
@@ -160,6 +169,7 @@ namespace SPH {
 
             sortedData.position[index] = unsortedData.position[sortedIndex];
             sortedData.velocity[index] = unsortedData.velocity[sortedIndex];
+            sortedData.veleval[index] = unsortedData.veleval[sortedIndex];
 
         }
 
