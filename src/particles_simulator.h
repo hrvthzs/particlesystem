@@ -3,11 +3,16 @@
 
 #include <GL/glew.h>
 
+#include <cutil_inline.h>
+#include <cutil_gl_inline.h>
+#include <vector_types.h>
+
+#include "particles.h"
 #include "settings.h"
 #include "settings_database.h"
 #include "settings_updatecallback.h"
 
-namespace Particles{
+namespace Particles {
 
     class Simulator : public Settings::UpdateCallback {
 
@@ -22,11 +27,14 @@ namespace Particles{
         virtual float* getColors() = 0;
         virtual GLuint getPositionsVBO();
         virtual GLuint getColorsVBO();
+        virtual GLuint getNormalsVBO();
         virtual void bindBuffers() = 0;
         virtual void unbindBuffers() = 0;
         unsigned int getNumParticles();
-
+        virtual unsigned int getNumVertices() = 0;
         virtual void generateParticles() = 0;
+        virtual void setRenderMode(int mode) = 0;
+        virtual GridMinMax getGridMinMax() = 0;
 
         virtual void setValue(Settings::RecordType record, float value);
         virtual float getValue(Settings::RecordType record);
@@ -36,9 +44,11 @@ namespace Particles{
 
     protected:
         unsigned int _numParticles;
+        unsigned int _numVertices;
 
         GLuint _positionsVBO;
         GLuint _colorsVBO;
+        GLuint _normalsVBO;
 
         Settings::Database* _database;
 

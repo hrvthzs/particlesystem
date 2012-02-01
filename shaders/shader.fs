@@ -35,6 +35,6 @@ void main()
     float diffuse = max(0.0, dot(lightDir, N));
 
     fragColor = col * diffuse;
-}
 
+}
 

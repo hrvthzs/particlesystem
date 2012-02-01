@@ -5,34 +5,35 @@
 
 namespace Buffer {
 
-    ///////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
 
     template<class T>
     Memory<T>::Memory(Allocator* allocator, memory_t memory) {
         this->_init(allocator, memory);
     }
 
-    ///////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
 
     template<class T>
     Memory<T>::Memory() {
         this->_init(new Allocator(), Device);
     }
 
-    ///////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
 
     template<class T>
     Memory<T>::~Memory() {
         this->free();
     }
 
-    ///////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
 
     template<class T>
     error_t Memory<T>::bind() {
 
         error_t error = Success;
 
+        // TODO texture memory and fetch in kernels
         /*if (this->_memory == Device) {
             cudaError_t cudaError = cudaBindTexture(
                 0,
@@ -51,7 +52,7 @@ namespace Buffer {
         return error;
     }
 
-    ///////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
 
     template<class T>
     void Memory<T>::unbind() {
@@ -63,7 +64,7 @@ namespace Buffer {
         }*/
     }
 
-    ///////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
 
     template<class T>
     error_t Memory<T>::memset(int value) {
@@ -90,7 +91,7 @@ namespace Buffer {
         return error;
     }
 
-    ///////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
 
     template<class T>
     void Memory<T>::allocate(size_t size) {
@@ -120,7 +121,21 @@ namespace Buffer {
         }
     }
 
-    ///////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+
+    template<class T>
+    void Memory<T>::copyTo(void* dst, memory_t dstMem) {
+        this->_copy(this->get(), dst, this->_memory, dstMem);
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+
+    template<class T>
+    void Memory<T>::copyFrom(void* src, memory_t srcMem) {
+        this->_copy(src, this->get(), srcMem, this->_memory);
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
 
     template<class T>
     void Memory<T>::free() {
@@ -139,7 +154,7 @@ namespace Buffer {
         }
     }
 
-    ///////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
 
     template<class T>
     void Memory<T>::_init(Allocator* allocator, memory_t memory) {
@@ -150,7 +165,44 @@ namespace Buffer {
         this->_memoryPtr = NULL;
     }
 
-    ///////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+
+    template<class T>
+    void Memory<T>::_copy(
+        void* src,
+        void* dst,
+        memory_t srcMem,
+        memory_t dstMem
+    ) {
+
+        enum cudaMemcpyKind kind;
+
+        if (srcMem == HostPinned) {
+            srcMem = Host;
+        }
+
+        if (dstMem == HostPinned) {
+            dstMem = Host;
+        }
+
+        if (srcMem == Device && dstMem == Device) {
+            kind = cudaMemcpyDeviceToDevice;
+        } else if (srcMem == Device && dstMem == Host) {
+            kind = cudaMemcpyDeviceToHost;
+        } else if (srcMem == Host && dstMem == Device) {
+            kind = cudaMemcpyHostToDevice;
+        } else if (srcMem == Host && dstMem == Host) {
+            kind = cudaMemcpyHostToHost;
+        } else {
+            return;
+        }
+
+        cutilSafeCall(
+            cudaMemcpy(dst, src, this->_size * sizeof(T), kind)
+        );
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
 
 }
 

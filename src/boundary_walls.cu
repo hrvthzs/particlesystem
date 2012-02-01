@@ -8,122 +8,107 @@ namespace Boundary {
     namespace Walls {
 
     __device__ float3 calculateWallsNoPenetrationForce(
-        float3 const& pos,
-        float3 const& vel,
-        float3 const& grid_min,
-        float3 const& grid_max,
-        float const& boundary_distance,
-        float const& boundary_stiffness,
-        float const& boundary_dampening,
-        float const& scale_to_simulation)
-    {
-        float3 repulsion_force = make_float3(0,0,0);
-        float diff;
+        float3 const& position,
+        float3 const& velocity,
+        float3 const& gridMin,
+        float3 const& gridMax,
+        float const& boundaryDistance,
+        float const& boundaryStiffness,
+        float const& boundaryDampening
+    ) {
+        float3 repulsionForce = make_float3(0,0,0);
+        float difference;
 
-        // simple limit for "wall" in Y direction (min of simulated volume)
-        diff = boundary_distance - ((pos.y - grid_min.y ) * scale_to_simulation);
-        if (diff > EPSILON) {
+        difference = boundaryDistance - (position.y - gridMin.y );
+        if (difference > EPSILON) {
             float3 normal = make_float3(0,1,0);
-            repulsion_force  += calculateRepulsionForce(vel, normal, diff, boundary_dampening, boundary_stiffness);
+            repulsionForce += calculateRepulsionForce(velocity, normal, difference, boundaryDampening, boundaryStiffness);
         }
 
-        // simple limit for "wall" in Y direction (max of simulated volume)
-        diff = boundary_distance - ((grid_max.y - pos.y ) * scale_to_simulation);
-        if (diff > EPSILON) {
+        difference = boundaryDistance - (gridMax.y - position.y);
+        if (difference > EPSILON) {
             float3 normal = make_float3(0,-1,0);
-            repulsion_force  += calculateRepulsionForce(vel, normal, diff, boundary_dampening, boundary_stiffness);
+            repulsionForce  += calculateRepulsionForce(velocity, normal, difference, boundaryDampening, boundaryStiffness);
         }
 
-        // simple limit for "wall" in Z direction (min of simulated volume)
-        diff = boundary_distance - ((pos.z - grid_min.z ) * scale_to_simulation);
-        if (diff > EPSILON ) {
+        difference = boundaryDistance - (position.z - gridMin.z);
+        if (difference > EPSILON ) {
             float3 normal = make_float3(0,0,1);
-            repulsion_force  += calculateRepulsionForce(vel, normal, diff, boundary_dampening, boundary_stiffness);
+            repulsionForce += calculateRepulsionForce(velocity, normal, difference, boundaryDampening, boundaryStiffness);
         }
 
-        // simple limit for "wall" in Z direction (max of simulated volume)
-        diff = boundary_distance - ((grid_max.z - pos.z ) * scale_to_simulation);
-        if (diff > EPSILON) {
+        difference = boundaryDistance - (gridMax.z - position.z);
+        if (difference > EPSILON) {
             float3 normal = make_float3(0,0,-1);
-            float adj =  boundary_stiffness * diff - boundary_dampening * dot(normal, vel);
-            repulsion_force  += adj * normal;
+            repulsionForce += calculateRepulsionForce(velocity, normal, difference, boundaryDampening, boundaryStiffness);;
         }
 
-        // simple limit for "wall" in X direction (min of simulated volume)
-        diff = boundary_distance - ((pos.x - grid_min.x ) * scale_to_simulation);
-        if (diff > EPSILON ) {
+        difference = boundaryDistance - (position.x - gridMin.x);
+        if (difference > EPSILON ) {
             float3 normal = make_float3(1,0,0);
-            repulsion_force  += calculateRepulsionForce(vel, normal, diff, boundary_dampening, boundary_stiffness);
+            repulsionForce += calculateRepulsionForce(velocity, normal, difference, boundaryDampening, boundaryStiffness);
         }
 
-        // simple limit for "wall" in X direction (max of simulated volume)
-        diff = boundary_distance - ((grid_max.x - pos.x ) * scale_to_simulation);
-        if (diff > EPSILON) {
+        difference = boundaryDistance - (gridMax.x - position.x);
+        if (difference > EPSILON) {
             float3 normal = make_float3(-1,0,0);
-            repulsion_force  += calculateRepulsionForce(vel, normal, diff, boundary_dampening, boundary_stiffness);
+            repulsionForce += calculateRepulsionForce(velocity, normal, difference, boundaryDampening, boundaryStiffness);
         }
 
-        return repulsion_force;
+        return repulsionForce;
     }
 
 
     __device__ float3 calculateWallsNoSlipForce(
-        float3 const& pos,
-        float3 const& vel,
+        float3 const& position,
+        float3 const& velocity,
         float3 const& force,
-        float3 const& grid_min,
-        float3 const& grid_max,
-        float const& boundary_distance,
-        float const& friction_kinetic,
-        float const& friction_static_limit,
-        float const& scale_to_simulation)
-    {
-        float3 friction_force = make_float3(0,0,0);
-        float diff;
+        float3 const& gridMin,
+        float3 const& gridMax,
+        float const& boundaryDistance,
+        float const& kineticFriction,
+        float const& staticFrictionLimit
+    ) {
+        float3 frictionForce = make_float3(0,0,0);
+        float difference;
 
-        // simple limit for "wall" in Y direction (min of simulated volume)
-        diff = boundary_distance - ((pos.y - grid_min.y ) * scale_to_simulation);
-        if (diff > EPSILON) {
+        difference = boundaryDistance - (position.y - gridMin.y);
+        if (difference > EPSILON) {
             float3 normal = make_float3(0,1,0);
-            friction_force += calculateFrictionForce(vel, force, normal, friction_kinetic, friction_static_limit);
+            frictionForce += calculateFrictionForce(velocity, force, normal, kineticFriction, staticFrictionLimit);
         }
 
-        // simple limit for "wall" in Y direction (max of simulated volume)
-        diff = boundary_distance - ((grid_max.y - pos.y ) * scale_to_simulation);
-        if (diff > EPSILON) {
+        difference = boundaryDistance - (gridMax.y - position.y);
+        if (difference > EPSILON) {
             float3 normal = make_float3(0,-1,0);
-            friction_force += calculateFrictionForce(vel, force, normal, friction_kinetic, friction_static_limit);
+            frictionForce += calculateFrictionForce(velocity, force, normal, kineticFriction, staticFrictionLimit);
         }
 
-        // simple limit for "wall" in Z direction (min of simulated volume)
-        diff = boundary_distance - ((pos.z - grid_min.z ) * scale_to_simulation);
-        if (diff > EPSILON ) {
+        difference = boundaryDistance - (position.z - gridMin.z);
+        if (difference > EPSILON ) {
             float3 normal = make_float3(0,0,1);
-            friction_force += calculateFrictionForce(vel, force, normal, friction_kinetic, friction_static_limit);
+            frictionForce += calculateFrictionForce(velocity, force, normal, kineticFriction, staticFrictionLimit);
         }
 
-        // simple limit for "wall" in Z direction (max of simulated volume)
-        diff = boundary_distance - ((grid_max.z - pos.z ) * scale_to_simulation);
-        if (diff > EPSILON) {
+        difference = boundaryDistance - (gridMax.z - position.z);
+        if (difference > EPSILON) {
             float3 normal = make_float3(0,0,-1);
-            friction_force += calculateFrictionForce(vel, force, normal, friction_kinetic, friction_static_limit);
+            frictionForce += calculateFrictionForce(velocity, force, normal, kineticFriction, staticFrictionLimit);
         }
 
-        // simple limit for "wall" in X direction (min of simulated volume)
-        diff = boundary_distance - ((pos.x - grid_min.x ) * scale_to_simulation);
-        if (diff > EPSILON ) {
+        difference = boundaryDistance - (position.x - gridMin.x);
+        if (difference > EPSILON ) {
             float3 normal = make_float3(1,0,0);
-            friction_force += calculateFrictionForce(vel, force, normal, friction_kinetic, friction_static_limit);
+            frictionForce += calculateFrictionForce(velocity, force, normal, kineticFriction, staticFrictionLimit);
         }
 
-        // simple limit for "wall" in X direction (max of simulated volume)
-        diff = boundary_distance - ((grid_max.x - pos.x ) * scale_to_simulation);
-        if (diff > EPSILON) {
+        difference = boundaryDistance - (gridMax.x - position.x);
+        if (difference > EPSILON) {
             float3 normal = make_float3(-1,0,0);
-            friction_force += calculateFrictionForce(vel, force, normal, friction_kinetic, friction_static_limit);
+            frictionForce += calculateFrictionForce(velocity, force, normal, kineticFriction, staticFrictionLimit);
         }
 
-        return friction_force;
+        return frictionForce;
     }
 
     };

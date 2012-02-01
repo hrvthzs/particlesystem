@@ -146,7 +146,7 @@ namespace Grid {
         buffer->allocate(this->_numParticles);
 
 
-        cudaMemcpy(buffer->get(), this->_data.cellStop, this->_numCells * sizeof(uint), cudaMemcpyDeviceToHost);
+        cudaMemcpy(buffer->get(), this->_data.hash, this->_numParticles * sizeof(uint), cudaMemcpyDeviceToHost);
         uint* hash = buffer->get();
         cutilSafeCall(cutilDeviceSynchronize());
 
@@ -215,6 +215,13 @@ namespace Grid {
                 this->_params.resolution.z / this->_params.size.z
             );
 
+        this->_params.cellSize =
+            make_float3(
+                this->_params.size.x / this->_params.resolution.x,
+                this->_params.size.y / this->_params.resolution.y,
+                this->_params.size.z / this->_params.resolution.z
+            );
+
         // Copy parameters to GPU's constant memory
         // declaration of symbol is in grid.cuh
         CUDA_SAFE_CALL(
@@ -263,6 +270,13 @@ namespace Grid {
             << this->_params.delta.x << ", "
             << this->_params.delta.y << ", "
             << this->_params.delta.z << "]"
+            << std::endl;
+
+        std::cout
+            << "CellSize["
+            << this->_params.cellSize.x << ", "
+            << this->_params.cellSize.y << ", "
+            << this->_params.cellSize.z << "]"
             << std::endl;
 
         std::cout

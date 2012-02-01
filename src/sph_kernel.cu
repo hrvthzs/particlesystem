@@ -12,11 +12,11 @@ __constant__ SPH::PrecalcParams  cudaPrecalcParams;
 #include "sph_neighbours.cu"
 #include "colors.cu"
 
-using namespace Grid::Utils;
-
 namespace SPH {
 
     namespace Kernel {
+
+        using namespace Grid::Utils;
 
         ////////////////////////////////////////////////////////////////////////
 
@@ -50,19 +50,17 @@ namespace SPH {
                     cudaGridParams.max,
                     cudaFluidParams.boundaryDistance,
                     cudaFluidParams.boundaryStiffness,
-                    cudaFluidParams.boundaryDampening,
-                    cudaFluidParams.scaleToSimulation);
+                    cudaFluidParams.boundaryDampening);
 
             // add no-slip force due to "walls"
-            externalForce += Boundary::Walls::calculateWallsNoSlipForce(
+            /*externalForce += Boundary::Walls::calculateWallsNoSlipForce(
                     position, veleval, force + externalForce,
                     cudaGridParams.min,
                     cudaGridParams.max,
                     cudaFluidParams.boundaryDistance,
                     cudaFluidParams.frictionKinetic/deltaTime,
-                    cudaFluidParams.frictionStaticLimit,
-                    cudaFluidParams.scaleToSimulation);
-
+                    cudaFluidParams.frictionStaticLimit);
+            */
             force += externalForce;
 
             float speed = length(force);
@@ -75,34 +73,18 @@ namespace SPH {
             veleval = (velocity + vnext) * 0.5f;
             velocity = veleval;
 
-            position += vnext * (deltaTime / cudaFluidParams.scaleToSimulation);
+            position += vnext * deltaTime;
 
             uint sortedIndex = gridData.index[index];
 
-            /*if (position.x < cudaGridParams.min.x) {
-                position.x = cudaGridParams.min.x;
-                velocity *= -cudaFluidParams.boundaryDampening;
+            /*if ((position.y - EPSILON) <= cudaGridParams.min.y) {
+                position.y =  cudaGridParams.min.y + EPSILON;
             }
-            if (position.x > cudaGridParams.max.x) {
-                position.x = cudaGridParams.max.x;
-                velocity *= -cudaFluidParams.boundaryDampening;
-            }
-            if (position.y < cudaGridParams.min.y) {
-                position.y = cudaGridParams.min.y;
-                velocity *= -cudaFluidParams.boundaryDampening;
-            }
-            if (position.y > cudaGridParams.max.y) {
-                position.y = cudaGridParams.max.y;
-                velocity *= -cudaFluidParams.boundaryDampening;
-            }
-            if (position.z < cudaGridParams.min.z) {
-                position.z = cudaGridParams.min.z;
-                velocity *= -cudaFluidParams.boundaryDampening;
-            }
-            if (position.z > cudaGridParams.max.z) {
-                position.z = cudaGridParams.max.z;
-                velocity *= -cudaFluidParams.boundaryDampening;
+
+            if ((position.y + EPSILON) >= cudaGridParams.max.y) {
+                position.y =  cudaGridParams.max.y - EPSILON;
             }*/
+
 
             data.position[sortedIndex] = make_float4(position, 1.0f);
             data.velocity[sortedIndex] = make_float4(velocity, 1.0f);
@@ -121,7 +103,6 @@ namespace SPH {
                 data.color[sortedIndex] = make_float4(color, 1.0f);
             }
 
-            //data.color[sortedIndex] = make_float4(0.09f, 0.31f, 0.98f, 1.0f);
         }
 
         ////////////////////////////////////////////////////////////////////////

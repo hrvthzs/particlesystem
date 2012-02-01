@@ -2,11 +2,12 @@
 #define __PARTICLES_RENDERER_H__
 
 // OpenGL includes
-# include <GL/glew.h>
+#include <GL/glew.h>
 #include <SDL/SDL.h>
 
 #include "shader_program.h"
 #include "particle_system.h"
+#include "particles.h"
 #include "particles_simulator.h"
 
 // Replacement for gluErrorString
@@ -67,18 +68,13 @@ namespace Particles {
             void _stop();
 
             Simulator* _simulator;
-            ShaderProgram* _shaderProgram;
-            SDL_Surface* _SDLSurface;
 
-            GLuint _positionAttribute;
-            GLuint _colorAttribute;
-            GLuint _mvpUniform;
-            GLuint _mvUniform;
-            // window dimensions x -> width, y -> height
-            GLuint _windowUniform;
-            GLuint _aspectRatioUniform;
-            GLuint _pointScale;
-            GLuint _pointRadius;
+            Shader::Program* _shaderProgram;
+            Shader::Program* _marchingProgram;
+            Shader::Program* _cubeProgram;
+            Shader::Program* _tesselationProgram;
+
+            SDL_Surface* _SDLSurface;
 
             int _windowWidth;
             int _windowHeight;
@@ -90,6 +86,11 @@ namespace Particles {
             float _rotationY;
             float _translationZ;
 
+            RenderMode _renderMode;
+
+            uint _tessLevelInner;
+            uint _tessLevelOuter;
+
             ////////////////////////////////////////////////////////////////////
             // TEMPORARY SOLUTION
             ////////////////////////////////////////////////////////////////////
@@ -98,8 +99,11 @@ namespace Particles {
 
             unsigned int _numParticles;
 
-            GLuint _vbo;
+            GLuint _positionsVBO;
             GLuint _colorsVBO;
+            GLuint _normalsVBO;
+            GLuint _cubeVBO;
+
             bool _animate;
             bool _dynamicColoring;
             float _deltaTime;
@@ -116,6 +120,7 @@ namespace Particles {
             );
 
             void _runCuda();
+            void _createCube();
 
     };
 };
