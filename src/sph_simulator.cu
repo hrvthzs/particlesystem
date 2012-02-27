@@ -21,11 +21,15 @@ namespace SPH {
     ////////////////////////////////////////////////////////////////////////////
 
     Simulator::Simulator () {
+
     }
 
     ////////////////////////////////////////////////////////////////////////////
 
     Simulator::~Simulator() {
+        cudaEventDestroy(this->_startFPS);
+        cudaEventDestroy(this->_stopFPS);
+
         delete this->_bufferManager;
         delete this->_grid;
         delete this->_marchingRenderer;
@@ -41,10 +45,10 @@ namespace SPH {
             ->insert(ParticleNumber, "Particles", this->_numParticles)
             ->insert(GridSize, "Grid size", 3.0f)
             ->insert(Timestep, "Timestep", 0.0f, 1.0f, 0.01f)
-            ->insert(RestDensity, "Rest density", 0.0f, 10000.0f, 5000.0f) // step 1000
-            ->insert(RestPressure, "Rest pressure", 0.0f, 10000.0f, 0.0f)
+            ->insert(RestDensity, "Rest density", 0.0f, 10000.0f, 6000.0f) // step 1000
+            ->insert(RestPressure, "Rest pressure", 0.0f, 10000.0f, 1000.0f)
             ->insert(GasStiffness, "Gas Stiffness", 0.001f, 10.0f, 1.0f)
-            ->insert(Viscosity, "Viscosity", 0.0f, 100.0f, 1.0f) // step 0.1
+            ->insert(Viscosity, "Viscosity", 0.0f, 100.0f, 100.0f) // step 0.1
             ->insert(BoundaryDampening, "Bound. damp.", 0.0f, 10000.0f, 256.0f)
             ->insert(BoundaryStiffness, "Bound. stiff.", 0.0f, 100000.0f, 20000.0f)
             ->insert(VelocityLimit, "Veloc. limit", 0.0f, 10000.0f, 500.0f)
@@ -52,8 +56,6 @@ namespace SPH {
             ->insert(KineticFriction, "Kinet. fric.", 0.0f, 10000.0f, 0.0f)
             ->insert(StaticFrictionLimit, "Stat. Fric. Lim.", 0.0f, 10000.0f, 0.0f)
             ->insert(DynamicColoring, "DynamicColoring", 0.0f, true);
-
-
 
             float particleMass = 1.0 * pow(10, -7);
                 //((128.0f * 1024.0f ) / this->_numParticles) * 0.0002f * 0.0005;
@@ -99,6 +101,15 @@ namespace SPH {
         this->_createBuffers();
 
         this->_marchingRenderer = new Marching::Renderer(this->_grid);
+
+        cudaEventCreate(&this->_startFPS);
+        cudaEventCreate(&this->_stopFPS);
+
+        cudaEventRecord(this->_startFPS, 0);
+        cudaEventRecord(this->_stopFPS, 0);
+
+        this->_iterFPS = 0;
+        this->_sumTimeFPS = 0;
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -206,7 +217,7 @@ namespace SPH {
         float* e = buffer->get();
         */
         Buffer::Memory<float4>* posBuffer =
-            new Buffer::Memory<float4>(new Buffer::Allocator(), Buffer::Host);
+            new Buffer::Memory<float4>(Buffer::Host);
 
         posBuffer->allocate(this->_numParticles);
 
@@ -235,6 +246,11 @@ namespace SPH {
         std::cout << "____________________" << std::endl;
         //std::cout << c << std::endl;
         */
+
+        if (this->_renderMode == Particles::RenderMarching) {
+            this->_marchingRenderer->render();
+        }
+
         this->_step1();
         this->_step2();
         this->_integrate(
@@ -242,6 +258,19 @@ namespace SPH {
             gravity
         );
         //cutilSafeCall(cutilDeviceSynchronize());
+
+        float time;
+
+        cudaEventRecord(this->_stopFPS, 0);
+        cudaEventSynchronize(this->_stopFPS);
+        cudaEventElapsedTime(&time, this->_startFPS, this->_stopFPS);
+
+        this->_iterFPS++;
+        this->_sumTimeFPS += 1000 / time;
+
+        cout << "Time for the kernel: " << this->_sumTimeFPS / this->_iterFPS << " fps" << endl;
+        cudaEventRecord(this->_startFPS, 0);
+
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -259,9 +288,9 @@ namespace SPH {
         this->_bufferManager->memsetBuffers(0);
 
         Buffer::Memory<float4>* positionBuffer =
-            new Buffer::Memory<float4>(new Buffer::Allocator(), Buffer::Host);
+            new Buffer::Memory<float4>(Buffer::Host);
         Buffer::Memory<float4>* colorBuffer =
-            new Buffer::Memory<float4>(new Buffer::Allocator(), Buffer::Host);
+            new Buffer::Memory<float4>(Buffer::Host);
 
         positionBuffer->allocate(this->_numParticles);
         colorBuffer->allocate(this->_numParticles);
@@ -512,14 +541,9 @@ namespace SPH {
 
         this->_bufferManager->allocateBuffers(this->_numParticles);
 
-        size_t size = 0;
-        size += color->getMemorySize();
-        size += position->getMemorySize();
-        size += density->getMemorySize();
-        size += velocity->getMemorySize();
-        size += force->getMemorySize();
-        size += pressure->getMemorySize();
-        std::cout << "Memory usage: " << 2 * size / 1024.0 / 1024.0 << " MB\n";
+        size_t usage = Buffer::Allocator::getInstance()->getUsage(Buffer::Device);
+        std::cout << "Memory usage: "
+            << usage / 1024.0 / 1024.0 << " MB\n";
 
         // !!! WARNING !!!
         // without binding vertex buffers can't return valid pointer to memory
@@ -645,7 +669,7 @@ namespace SPH {
             this->_precalcParams.spikyGradCoeff;
 
         this->_precalcParams.viscosityPrecalc =
-            this->_fluidParams.viscosity *
+            -this->_fluidParams.viscosity *
             this->_precalcParams.viscosityLapCoeff;
 
         // DEBUG

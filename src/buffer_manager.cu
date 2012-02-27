@@ -40,7 +40,7 @@ namespace Buffer {
 
         for(this->_iterator = this->_buffers.begin();
             this->_iterator != this->_buffers.end();
-        ++this->_iterator
+            ++this->_iterator
         ) {
             this->_buffers.erase(id);
             delete this->_iterator->second;
@@ -112,7 +112,7 @@ namespace Buffer {
 
         for(this->_iterator = this->_buffers.begin();
             this->_iterator != this->_buffers.end();
-        ++this->_iterator
+            ++this->_iterator
         ) {
             Abstract<void> *buffer = this->_iterator->second;
             buffer->unbind();

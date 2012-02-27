@@ -24,7 +24,7 @@ namespace Buffer {
              * @param allocator memory allocator instance
              * @param memory memory location @see Buffer::MemoryLocation
              */
-            Memory(Allocator* allocator, memory_t memory);
+            Memory(memory_t memory);
 
             /**
              * Constructor
@@ -89,7 +89,7 @@ namespace Buffer {
             /**
              * Initialize class variables
              */
-            void _init(Allocator* allocator, memory_t memory);
+            void _init(memory_t memory);
 
             /**
              * Copies from one memory to another

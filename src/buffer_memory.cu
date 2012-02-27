@@ -8,15 +8,15 @@ namespace Buffer {
     ////////////////////////////////////////////////////////////////////////////
 
     template<class T>
-    Memory<T>::Memory(Allocator* allocator, memory_t memory) {
-        this->_init(allocator, memory);
+    Memory<T>::Memory(memory_t memory) {
+        this->_init(memory);
     }
 
     ////////////////////////////////////////////////////////////////////////////
 
     template<class T>
     Memory<T>::Memory() {
-        this->_init(new Allocator(), Device);
+        this->_init(Device);
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -157,8 +157,8 @@ namespace Buffer {
     ////////////////////////////////////////////////////////////////////////////
 
     template<class T>
-    void Memory<T>::_init(Allocator* allocator, memory_t memory) {
-        this->_allocator = allocator;
+    void Memory<T>::_init(memory_t memory) {
+        this->_allocator = Allocator::getInstance();
         this->_memory = memory;
         this->_bound = false;
         this->_size = 0;

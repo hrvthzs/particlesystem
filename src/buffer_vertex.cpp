@@ -1,8 +1,6 @@
 #ifndef __BUFFER_VERTEX_CPP__
 #define __BUFFER_VERTEX_CPP__
 
-#include "kernel.cuh"
-
 #include <iostream>
 
 namespace Buffer {

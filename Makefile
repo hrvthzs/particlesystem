@@ -37,10 +37,8 @@
 EXECUTABLE	:= particleSystem
 # CUDA source files (compiled with cudacc)
 CUFILES		:= \
-	src/kernel.cu \
 	src/main.cu \
 	src/marching_renderer.cu \
-	src/particle_system.cu \
 	src/grid_uniform.cu \
 	src/grid_utils.cu \
 	src/sph_simulator.cu \
@@ -69,7 +67,6 @@ CCFILES		:= \
 	src/buffer_allocator.cpp \
 	src/particles_renderer.cpp \
 	src/particles_simulator.cpp \
-	src/particle_system.cpp \
 	src/settings_database.cpp \
 	src/shader_program.cpp \
 

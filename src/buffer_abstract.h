@@ -6,7 +6,7 @@
 namespace Buffer {
 
     /**
-     * Abstract Buffer
+     * Abstract Buffer class
      *
      * !!! Important !!!
      * For template classes definition must be included too
@@ -17,62 +17,62 @@ namespace Buffer {
         public:
 
             /**
-            * Constructor
-            */
+             * Constructor
+             */
             Abstract();
 
             /**
-            * Destructor
-            */
+             * Destructor
+             */
             virtual ~Abstract();
 
             /**
-            * Bind buffer to texture
-            * @return type of error
-            */
+             * Bind buffer to texture
+             * @return type of error
+             */
             virtual error_t bind() = 0;
 
             /**
-            * Unbind memory buffer from texture
-            */
+             * Unbind memory buffer from texture
+             */
             virtual void unbind() = 0;
 
             /**
-            * Initialize memory with specified value
-            * @param value init value
-            */
+             * Initialize memory with specified value
+             * @param value init value
+             */
             virtual error_t memset(int value) = 0;
 
             /**
-            * Allocate memory for required number of elements
-            * @param size number of elements
-            */
+             * Allocate memory for required number of elements
+             * @param size number of elements
+             */
             virtual void allocate(size_t size) = 0;
 
             /**
-            * Free buffer from memory
-            */
+             * Free buffer from memory
+             */
             virtual void free() = 0;
 
             /**
-            * Returns pointer to memory
-            */
+             * Returns pointer to memory
+             */
             T* get();
 
             /**
-            * Returns the number of elements in buffer
-            */
+             * Returns the number of elements in buffer
+             */
             size_t getSize();
 
             /**
-            * Returns allocated memory size
-            */
+             * Returns allocated memory size
+             */
             size_t getMemorySize();
 
             /**
-            * Returns true if buffer is bound to texture,
-            * false otherwise
-            */
+             * Returns true if buffer is bound to texture,
+             * false otherwise
+             */
             bool isBound();
 
         protected:

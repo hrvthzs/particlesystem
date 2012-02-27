@@ -3,7 +3,6 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "particles_renderer.h"
-#include "kernel.cuh"
 
 namespace Particles {
 
@@ -12,10 +11,9 @@ namespace Particles {
     Renderer::Renderer(Simulator* simulator) {
         this->_simulator = simulator;
 
-        this->_numParticles = 25000;
+        this->_numParticles = 15000;
 
         this->_animate = false;
-        this->_deltaTime = 0.0;
 
         this->_rotationX = 0.0f;
         this->_rotationY = 0.0f;
@@ -299,7 +297,7 @@ namespace Particles {
             glm::rotate(
                 glm::translate(
                     glm::mat4(1.0f),
-                               glm::vec3(0, 0, this->_translationZ)
+                    glm::vec3(0, 0, this->_translationZ)
                 ),
                 this->_rotationY,
                 glm::vec3(1, 0, 0)
@@ -308,30 +306,43 @@ namespace Particles {
             glm::vec3(0, 1, 0)
         );
 
-        glm::vec4 gravity = glm::vec4(0,-9.8,0,0);
+        glm::mat3 mn = glm::mat3(
+            glm::rotate(
+                glm::rotate(
+                    glm::mat4(1.0f),
+                            this->_rotationY,
+                            glm::vec3(0, 1, 0)
+                ),
+                this->_rotationX,
+                glm::vec3(1, 0, 0)
+            )
+        );
 
-        gravity = mv*gravity;
+        glm::mat4 mv2 = glm::rotate(
+            glm::rotate(
+                glm::mat4(1.0f),
+                this->_rotationY,
+                glm::vec3(1, 0, 0)
+            ),
+            this->_rotationX,
+            glm::vec3(0, 1, 0)
+        );
+
+        glm::vec4 gravity = glm::vec4(0,-9.8,0,1);
+
+        gravity = mv2*gravity;
+        //cout << gravity.x << ", " << gravity.y << ", " << -gravity.z << endl;
+
         glm::mat4 mvp = projection*mv;
 
         if (this->_animate) {
             this->_simulator->update(gravity.x, gravity.y, gravity.z);
         }
 
-        glm::mat3 mn = glm::mat3(
-            glm::rotate(
-                glm::rotate(
-                    glm::mat4(1.0f),
-                            this->_rotationY,
-                            glm::vec3(1, 0, 0)
-                ),
-                this->_rotationX,
-                glm::vec3(0, 1, 0)
-            )
-        );
-
         glm::vec2 windowSize =
-        glm::vec2(this->_windowWidth, this->_windowHeight);
+            glm::vec2(this->_windowWidth, this->_windowHeight);
 
+        glClearColor(1,1,1,0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glEnable(GL_DEPTH_TEST);
@@ -346,7 +357,6 @@ namespace Particles {
             ->setUniformMatrix4fv(
                 "mvp", 1, GL_FALSE, glm::value_ptr(mvp)
             );
-
 
 
         //TODO create VAO for VBOs and attributes
@@ -378,8 +388,6 @@ namespace Particles {
                 ->setUniform1f("pointRadius", 50.f)
                 ->setUniform1f("aspectRatio", this->_aspectRatio)
                 ->setUniform2fv("windowSize", 1, glm::value_ptr(windowSize));
-
-
 
             //TODO create VAO for VBOs and attributes
             // Draw data
@@ -453,8 +461,6 @@ namespace Particles {
         glDisable(GL_POINT_SPRITE_ARB);
         glDisable(GL_VERTEX_PROGRAM_POINT_SIZE);
         SDL_GL_SwapBuffers();
-
-        this->_deltaTime += 0.01f;
 
     }
 
@@ -592,58 +598,6 @@ namespace Particles {
     }
 
     ////////////////////////////////////////////////////////////////////////////
-
-    void Renderer::_deleteVBO(
-        GLuint* vbo,
-        struct cudaGraphicsResource *vbo_res
-    ) {
-        if (vbo) {
-            // unregister this buffer object with CUDA
-            //DEPRECATED: cutilSafeCall(cudaGLUnregisterBufferObject(*pbo));
-            cudaGraphicsUnregisterResource(vbo_res);
-
-            glBindBuffer(1, *vbo);
-            glDeleteBuffers(1, vbo);
-
-            *vbo = 0;
-        }
-}
-
-    ////////////////////////////////////////////////////////////////////////////
-
-    void Renderer::_runCuda() {
-        /*struct cudaGraphicsResource *vbo_resource =
-            this->_particleSystem->getCudaPositionsVBOResource();
-        // map OpenGL buffer object for writing from CUDA
-        float4 *dptr;
-        // DEPRECATED: cutilSafeCall(cudaGLMapBufferObject((void**)&dptr, vbo));
-        cutilSafeCall(cudaGraphicsMapResources(1, &vbo_resource, 0));
-        size_t num_bytes;
-        cutilSafeCall(
-            cudaGraphicsResourceGetMappedPointer(
-                (void **)&dptr,
-                &num_bytes,
-                vbo_resource
-            )
-        );
-
-        // unmap buffer object
-        // DEPRECATED: cutilSafeCall(cudaGLUnmapBufferObject(vbo));
-        cutilSafeCall(cudaGraphicsUnmapResources(1, &vbo_resource, 0));
-        */
-        /*this->_simulator->bindBuffers();
-        float* ptr = this->_simulator->getPositions();
-
-        launch_kernel(
-            (float4*) ptr,
-                      this->_meshWidth,
-                      this->_meshHeight,
-                      this->_deltaTime
-        );
-        this->_simulator->unbindBuffers();*/
-    }
-
-
 
     void Renderer::_createCube() {
         glGenBuffers(1, &this->_cubeVBO);

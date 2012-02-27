@@ -5,10 +5,14 @@ class Poly6 {
 
     public:
 
+        ////////////////////////////////////////////////////////////////////////
+
         static __device__ __host__
         float getConstant (float smoothLen) {
             return 315.0f / (64.0f * M_PI * pow(smoothLen, 9.0f));
         }
+
+        ////////////////////////////////////////////////////////////////////////
 
         static __device__ __host__
         float getVariable(float smoothLenSq, float3 r, float rLenSq) {
@@ -16,11 +20,14 @@ class Poly6 {
             return variableSquare * variableSquare * variableSquare ;
         }
 
+        ////////////////////////////////////////////////////////////////////////
 
         static __device__ __host__
         float getGradientConstant (float smoothLen) {
             return -945.0f / (32.0f * M_PI * pow(smoothLen, 9.0f));
         }
+
+        ////////////////////////////////////////////////////////////////////////
 
         static __device__ __host__
         float3 getGradientVariable(float smoothLenSq, float3 r, float rLenSq) {
@@ -28,18 +35,28 @@ class Poly6 {
             return r * (variableSquare * variableSquare);
         }
 
+        ////////////////////////////////////////////////////////////////////////
 
         static __device__ __host__
-        float3 getGradient(float smoothLen, float smoothLenSq, float3 r, float rLenSq) {
+        float3 getGradient(
+            float smoothLen,
+            float smoothLenSq,
+            float3 r,
+            float rLenSq
+        ) {
             return
                 getGradientConstant(smoothLen) *
                 getGradientVariable(smoothLenSq, r, rLenSq);
         }
 
+        ////////////////////////////////////////////////////////////////////////
+
         static __device__ __host__
         float getLaplacianConstant (float smoothLen) {
             return 945.0f / (8.0f * M_PI * pow(smoothLen, 9.0f));
         }
+
+        ////////////////////////////////////////////////////////////////////////
 
         static __device__ __host__
         float getLaplacianVariable(float smoothLenSq, float rLenSq) {
@@ -47,6 +64,8 @@ class Poly6 {
             return
             variableSquare * (rLenSq - ((3.0/4.0) * variableSquare));
         }
+
+        ////////////////////////////////////////////////////////////////////////
 
 };
 

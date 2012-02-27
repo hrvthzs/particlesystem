@@ -112,10 +112,8 @@ namespace SPH {
             ) {
 
                 float3 sumForce = (
-                    cudaPrecalcParams.pressurePrecalc *
-                    data.pressureForce +
-                    cudaPrecalcParams.viscosityPrecalc *
-                    data.viscosityForce
+                    cudaPrecalcParams.pressurePrecalc * data.pressureForce +
+                    cudaPrecalcParams.viscosityPrecalc * data.viscosityForce
                 );
 
                 // Calculate the force, the particle_mass is added here because

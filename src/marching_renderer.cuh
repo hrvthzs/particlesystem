@@ -20,12 +20,34 @@ namespace Marching {
              */
             void render();
 
+            /**
+             * Bind buffers
+             */
             void bindBuffers();
+
+            /**
+             * Unbind buffers
+             */
             void unbindBuffers();
 
+            /**
+             * Get rendered data
+             */
             Marching::VertexData& getData();
+
+            /**
+             * Get number of vertices
+             */
             uint getNumVertices();
+
+            /**
+             * Get positions vertex buffer
+             */
             GLuint getPositionsVBO();
+
+            /**
+             * Get normals vertex buffer
+             */
             GLuint getNormalsVBO();
 
             /**

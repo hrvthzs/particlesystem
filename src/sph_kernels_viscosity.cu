@@ -5,10 +5,14 @@ class Viscosity {
 
     public:
 
+        ////////////////////////////////////////////////////////////////////////
+
         static __device__ __host__
         float getConstant (float smoothLen) {
             return 15.0f / (2.0f * M_PI * pow(smoothLen, 3.0f));
         }
+
+        ////////////////////////////////////////////////////////////////////////
 
         static __device__ __host__
         float getVariable(float smoothLen, float3 r, float rLen) {
@@ -24,10 +28,14 @@ class Viscosity {
                 1.0f;
         }
 
+        ////////////////////////////////////////////////////////////////////////
+
         static __device__ __host__
         float getGradientConstant (float smoothLen) {
             return 15.0f / (2.0f * M_PI * pow(smoothLen, 3.0f));
         }
+
+        ////////////////////////////////////////////////////////////////////////
 
         static __device__ __host__
         float3 getGradientVariable(float smoothLen, float3 r, float rLen) {
@@ -37,16 +45,21 @@ class Viscosity {
             return r * (variable1 + variable2 + variable3);
         }
 
+        ////////////////////////////////////////////////////////////////////////
+
         static __device__ __host__
         float getLaplacianConstant (float smoothLen) {
             return 45.0f / (M_PI * pow(smoothLen, 5.0f));
         }
 
+        ////////////////////////////////////////////////////////////////////////
+
         static __device__ __host__
         float getLaplacianVariable(float smoothLen, float3 r, float rLen) {
-            //return 1.0f - (rLen / smoothLen);
-            return smoothLen - rLen;
+            return 1.0f - (rLen / smoothLen);
         }
+
+        ////////////////////////////////////////////////////////////////////////
 
 };
 

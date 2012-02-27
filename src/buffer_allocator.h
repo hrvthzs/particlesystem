@@ -14,11 +14,10 @@ namespace Buffer {
     class Allocator {
 
         public:
-
             /**
-             * Constructor
+             * Get an instance of class
              */
-            Allocator();
+            static Allocator* getInstance();
 
             /**
              * Destructor
@@ -42,7 +41,20 @@ namespace Buffer {
              */
             error_t free(void **ptr, memory_t memory);
 
+            /**
+             * Get memory usage of requested memory type in bytes
+             * @param memory type of memory
+             */
+            size_t getUsage(memory_t memory);
+
         private:
+            /**
+             * Constructor
+             */
+            Allocator();
+
+            // static instance of class
+            static Allocator* _instance;
 
             // allocated host memory size
             size_t _hAllocatedMemory;
