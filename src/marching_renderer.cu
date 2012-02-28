@@ -31,7 +31,7 @@ namespace Marching {
 
         // TODO this is the 3rd constant memory copy code of this symbol
         // don't know why must in each cu file copy it
-        // files are compiled into separate object file, but maybe there
+        // files are compiled into separate object files, but maybe there
         // another reason
         CUDA_SAFE_CALL(
             cudaMemcpyToSymbol(

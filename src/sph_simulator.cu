@@ -58,7 +58,6 @@ namespace SPH {
             ->insert(DynamicColoring, "DynamicColoring", 0.0f, true);
 
             float particleMass = 1.0 * pow(10, -7);
-                //((128.0f * 1024.0f ) / this->_numParticles) * 0.0002f * 0.0005;
             float particleRestDist =
                 0.87f *
                 pow(
@@ -68,15 +67,10 @@ namespace SPH {
             // if boundary distance is too small particles can drop off the grid
             // for only a small distance but for marching cubes this is not
             // acceptable
+            float cellSize = 0.1;
+            float boundaryDist = cellSize;
+            float smoothingLength = cellSize;
 
-            //float smoothingLength = pow(this->_numParticles, 1.0/3.0)*1.2;//2.0 * particleRestDist;
-            float cellSize = 0.1;//pow(this->_numParticles, 1.0/3.0);
-            float boundaryDist = cellSize; //10 * particleRestDist;
-            //float cellSize = 1.0;
-            // maybe 2 x cellSize is the ideal value for smoothing length
-            // but not only if simulation scale is 1
-            float smoothingLength = cellSize;//2.0 * particleRestDist;
-                //smoothingLength * this->_database->selectValue(SimulationScale);
 
         this->_database
             ->insert(ParticleMass, "Particle mass", particleMass)
