@@ -15,7 +15,8 @@ namespace Particles {
     enum eRenderMode {
         RenderPoints,
         RenderMarching,
-        RenderTesselation
+        RenderTesselation,
+        RenderNormals
     };
 
     struct sData {

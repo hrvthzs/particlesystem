@@ -49,8 +49,8 @@ namespace SPH {
             ->insert(RestPressure, "Rest pressure", 0.0f, 10000.0f, 1000.0f)
             ->insert(GasStiffness, "Gas Stiffness", 0.001f, 10.0f, 1.0f)
             ->insert(Viscosity, "Viscosity", 0.0f, 100.0f, 100.0f) // step 0.1
-            ->insert(BoundaryDampening, "Bound. damp.", 0.0f, 10000.0f, 256.0f)
-            ->insert(BoundaryStiffness, "Bound. stiff.", 0.0f, 100000.0f, 20000.0f)
+            ->insert(BoundaryDampening, "Bound. damp.", 0.0f, 10000.0f, 0.0f) // 256
+            ->insert(BoundaryStiffness, "Bound. stiff.", 0.0f, 100000.0f, 10000.0f)
             ->insert(VelocityLimit, "Veloc. limit", 0.0f, 10000.0f, 500.0f)
             ->insert(SimulationScale, "Sim. scale", 0.0f, 1.0f, 1.0f)
             ->insert(KineticFriction, "Kinet. fric.", 0.0f, 10000.0f, 0.0f)
@@ -257,7 +257,7 @@ namespace SPH {
             this->_database->selectValue(Timestep),
             gravity
         );
-        //cutilSafeCall(cutilDeviceSynchronize());
+        cutilSafeCall(cutilDeviceSynchronize());
 
         float time;
 
@@ -347,23 +347,23 @@ namespace SPH {
             }
         }
 
-        /*positions[0].x = 0.0f;
+        positions[0].x = 0.0f;
         positions[0].y = 0.0f;
         positions[0].z = 0.0f;
-        */
-        /*positions[0].x = -0.8549;
-        positions[0].y = 0.6905;
-        positions[0].z = 0.8506;*/
 
-        /*positions[0].x = 1.5f;
-        positions[0].y = 1.5f;
-        positions[0].z = 1.5f;
+//         positions[1].x = 0.05f;
+//         positions[1].y = 0.0f;
+//         positions[1].z = 0.0f;
 
-        positions[1].x = 1.5f;
-        positions[1].y = -1.5f;
-        positions[1].z = -1.5f;
+//         positions[2].x = 0.05f;
+//         positions[2].y = 0.05f;
+//         positions[2].z = 0.0f;
 
-        positions[2].x = -0.5f;
+//         positions[3].x = 0.0f;
+//         positions[3].y = -0.05f;
+//         positions[3].z = -0.05f;
+
+        /*positions[2].x = -0.5f;
         positions[2].y = 0.5f;
         positions[2].z = -0.5f;
 

@@ -272,6 +272,13 @@ namespace Particles {
             ->add(Shader::Evaluation, "shaders/marching_tess.es")
             ->add(Shader::Fragment, "shaders/marching_tess.fs")
             ->link();
+
+        this->_normalsProgram = new Shader::Program();
+        this->_normalsProgram
+            ->add(Shader::Vertex, "shaders/normals.vs")
+            ->add(Shader::Geometry, "shaders/normals.gs")
+            ->add(Shader::Fragment, "shaders/normals.fs")
+            ->link();
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -431,6 +438,27 @@ namespace Particles {
 
             glDrawArrays(GL_TRIANGLES, 0, this->_simulator->getNumVertices());
 
+        } else if (this->_renderMode == RenderNormals) {
+
+            this->_normalsProgram->enable();
+
+            this->_normalsProgram
+                ->setUniformMatrix4fv(
+                    "mvp", 1, GL_FALSE, glm::value_ptr(mvp)
+                );
+
+            // Draw data
+            glBindBuffer(GL_ARRAY_BUFFER, this->_simulator->getPositionsVBO());
+            this->_marchingProgram->setAttribute(
+                "position", 4, GL_FLOAT, GL_FALSE, 0, (void*) 0
+            );
+
+            glBindBuffer(GL_ARRAY_BUFFER, this->_simulator->getNormalsVBO());
+            this->_marchingProgram->setAttribute(
+                "normal", 4, GL_FLOAT, GL_FALSE, 0, (void*) 0
+            );
+
+            glDrawArrays(GL_TRIANGLES, 0, this->_simulator->getNumVertices());
         } else {
             // Tesselation
             this->_tesselationProgram->enable();
@@ -494,6 +522,10 @@ namespace Particles {
             case SDLK_m:
                 this->_renderMode = RenderMarching;
                 this->_simulator->setRenderMode(this->_renderMode);
+                break;
+            case SDLK_n:
+                this->_renderMode = RenderNormals;
+                this->_simulator->setRenderMode(RenderMarching);
                 break;
             case SDLK_t:
                 this->_renderMode = RenderTesselation;

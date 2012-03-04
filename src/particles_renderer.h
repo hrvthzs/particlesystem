@@ -167,6 +167,7 @@ namespace Particles {
             Shader::Program* _marchingProgram;
             Shader::Program* _cubeProgram;
             Shader::Program* _tesselationProgram;
+            Shader::Program* _normalsProgram;
 
             bool _animate;
             bool _dynamicColoring;
