@@ -52,11 +52,12 @@ namespace SPH {
             /**
              * Update simulator (integrate)
              *
+             * @param animate - run animation, if false only rendering works
              * @param x - gravity x coord
              * @param y - gravity y coord
              * @param z - gravity z coord
              */
-            void update(float x, float y, float z);
+            void update(bool animate, float x, float y, float z);
 
             /**
              * Get positions array (GPU) pointer
@@ -101,6 +102,11 @@ namespace SPH {
              * Set rendering method
              */
             void setRenderMode(int mode);
+
+            /**
+             * Get rendering method
+             */
+            int getRenderMode();
 
             /**
              * Get min and max positions of grid

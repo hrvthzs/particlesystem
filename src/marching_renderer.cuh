@@ -56,6 +56,13 @@ namespace Marching {
              */
             void freeBuffers();
 
+            /**
+             * Set interpolation of vertex normals
+             *
+             * @param interpolation flag of interpolation
+             */
+            void setInterpolation(bool interpolation);
+
         private:
             void _createBuffers();
             void _deleteBuffers();
@@ -75,6 +82,8 @@ namespace Marching {
             uint _numCells;
             uint _maxVertices;
             uint _numVertices;
+
+            bool _interpolation;
 
             GLuint _positionsVBO;
             GLuint _normalsVBO;

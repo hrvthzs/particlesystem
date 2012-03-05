@@ -161,29 +161,65 @@ namespace Particles {
              */
             void _createCube();
 
+            /**
+             * Render with point sprites
+             */
+            void _renderPoints(const GLfloat* mn, const GLfloat* mvp);
+
+            /**
+             * Render with marching cubes
+             */
+            void _renderMC(
+                const GLfloat* mn,
+                const GLfloat* mv,
+                const GLfloat* mvp
+            );
+
+            /**
+             * Render marching cubes normals
+             */
+            void _renderMCNormals(const GLfloat* mvp);
+
+            /**
+             * Render with marching cubes and tessellation
+             */
+            void _renderMCTess(const GLfloat* mn, const GLfloat* mvp);
+
+            /**
+             * Render with marching cubes and tessellation, display tessellated
+             * triangles
+             */
+            void _renderMCTessTriangles(const GLfloat* mn, const GLfloat* mvp);
+
             Simulator* _simulator;
             SDL_Surface* _SDLSurface;
             Shader::Program* _shaderProgram;
             Shader::Program* _marchingProgram;
             Shader::Program* _cubeProgram;
             Shader::Program* _tesselationProgram;
+            Shader::Program* _tesselationTrianglesProgram;
             Shader::Program* _normalsProgram;
 
             bool _animate;
+            bool _run;
             bool _dynamicColoring;
+            bool _drawNormals;
 
             int _windowWidth;
             int _windowHeight;
 
             uint _colorBits;
-            uint _tessLevelInner;
-            uint _tessLevelOuter;
             uint _numParticles;
 
             float _aspectRatio;
             float _rotationX;
             float _rotationY;
             float _translationZ;
+
+            // level of tessellation
+            float _tessLevel;
+            // level of normal displacement
+            float _tessAlpha;
 
             RenderMode _renderMode;
 

@@ -24,6 +24,7 @@ namespace Settings {
         DynamicColoring,
         GasStiffness,
         GridSize,
+        Interpolation,
         KineticFriction,
         ParticleMass,
         ParticleNumber,

@@ -16,6 +16,7 @@ namespace Particles {
         RenderPoints,
         RenderMarching,
         RenderTesselation,
+        RenderTesselationTriangles,
         RenderNormals
     };
 

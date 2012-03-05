@@ -1,13 +1,13 @@
-#version 150
+#version 420 core
+#extension GL_EXT_gpu_shader4 : enable
 
-in vec4 Position;
-uniform mat4 mvp;
-out vec3 vPosition;
+layout(location = 0)   in vec4 position;
+layout(location = 1)   in vec4 normal;
 
-void main()
-{
-    vPosition = Position.xyz;
+layout(location = 0)   out vec3 oPosition;
+layout(location = 1)   out vec3 oNormal;
 
-
-    //gl_Position = mvp * Position;
+void main() {
+    oPosition.xyz = position.xyz;
+    oNormal         = normalize(normal.xyz);
 }

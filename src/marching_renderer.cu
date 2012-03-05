@@ -18,6 +18,7 @@ namespace Marching {
     ////////////////////////////////////////////////////////////////////////////
 
     Renderer::Renderer(Grid::Uniform* grid) {
+        this->_interpolation = false;
         this->_grid = grid;
         this->_gridParams = grid->getParams();
 
@@ -49,37 +50,6 @@ namespace Marching {
     }
 
     ////////////////////////////////////////////////////////////////////////////
-
-    inline uint computeHash(
-        int3 const &position,
-        GridParams const &params
-    ) {
-
-        int rx = (int) floor(params.resolution.x);
-        int ry = (int) floor(params.resolution.y);
-        int rz = (int) floor(params.resolution.z);
-
-        // wrap grid... but since we can not assume size is power of 2
-        // we can't use binary AND/& :/
-        int px = position.x % rx;
-        int py = position.y % ry;
-        int pz = position.z % rz;
-
-        if(px < 0) px += rx;
-        if(py < 0) py += ry;
-        if(pz < 0) pz += rz;
-
-        // hash = x + y*width + z*width+height
-
-        return
-        px +
-        (py * params.resolution.x) +
-        (
-            params.resolution.x *
-            (pz* params.resolution.y)
-        );
-
-    }
 
     void Renderer::render() {
         uint numThreads = this->_gridParams.resolution.x + GRID_OFFSET;
@@ -185,17 +155,20 @@ namespace Marching {
             this->_gridParams.cellSize
         );
 
-        cutilSafeCall(cutilDeviceSynchronize());
-
-        Marching::Kernel::interpolateNormals<<<gridDim, NTHREADS>>>(
-            this->_vertexData,
-            this->_voxelData,
-            this->_tableData,
-            this->_grid->getData(),
-            this->_maxVertices,
-            activeVoxels,
-            this->_gridParams.cellSize
-        );
+        if (this->_interpolation) {
+//             cout << "interpolating" << endl;
+            Marching::Kernel::interpolateNormals<<<gridDim, NTHREADS>>>(
+                this->_vertexData,
+                this->_voxelData,
+                this->_tableData,
+                this->_grid->getData(),
+                this->_maxVertices,
+                activeVoxels,
+                this->_gridParams.cellSize
+            );
+        }  else {
+//             cout << "not interpolating" << endl;
+        }
 
         cutilSafeCall(cutilDeviceSynchronize());
 
@@ -342,6 +315,22 @@ namespace Marching {
 
     GLuint Renderer::getNormalsVBO() {
         return this->_normalsVBO;
+    }
+
+    void Renderer::setInterpolation(bool interpolation) {
+        // set new flag
+        this->_interpolation = interpolation;
+
+        // get type of buffer
+        Buffers type = (this->_interpolation) ? VertexINormal : VertexNormal;
+
+        // get pointer to buffer from it's manager
+        Buffer::Vertex<float4>* buffer =
+            (Buffer::Vertex<float4>*)this->_vertexBuffMan->get(type);
+
+        // get pointer to vertex buffer object of the selected buffer
+        this->_normalsVBO = buffer->getVBO();
+
     }
 
     ////////////////////////////////////////////////////////////////////////////

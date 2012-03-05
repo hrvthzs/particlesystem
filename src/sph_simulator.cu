@@ -57,33 +57,25 @@ namespace SPH {
             ->insert(StaticFrictionLimit, "Stat. Fric. Lim.", 0.0f, 10000.0f, 0.0f)
             ->insert(DynamicColoring, "DynamicColoring", 0.0f, true);
 
-            float particleMass = 1.0 * pow(10, -7);
-                //((128.0f * 1024.0f ) / this->_numParticles) * 0.0002f * 0.0005;
-            float particleRestDist =
-                0.87f *
-                pow(
-                    particleMass / this->_database->selectValue(RestDensity),
-                    1.0f/3.0f
-                );
-            // if boundary distance is too small particles can drop off the grid
-            // for only a small distance but for marching cubes this is not
-            // acceptable
+        float particleMass = 1.0 * pow(10, -7);
+        float particleRestDist =
+            0.01f *
+            pow(
+                particleMass / this->_database->selectValue(RestDensity),
+                1.0f/3.0f
+            );
 
-            //float smoothingLength = pow(this->_numParticles, 1.0/3.0)*1.2;//2.0 * particleRestDist;
-            float cellSize = 0.1;//pow(this->_numParticles, 1.0/3.0);
-            float boundaryDist = cellSize; //10 * particleRestDist;
-            //float cellSize = 1.0;
-            // maybe 2 x cellSize is the ideal value for smoothing length
-            // but not only if simulation scale is 1
-            float smoothingLength = cellSize;//2.0 * particleRestDist;
-                //smoothingLength * this->_database->selectValue(SimulationScale);
+        float cellSize = 0.1;
+        float boundaryDist = cellSize;
+        float smoothingLength = cellSize;
 
         this->_database
             ->insert(ParticleMass, "Particle mass", particleMass)
             ->insert(ParticleRestDistance, "Part. rest dist.", particleRestDist)
             ->insert(BoundaryDistance, "Bound. dist.", boundaryDist)
             ->insert(SmootingLength, "Smooth. len.", smoothingLength)
-            ->insert(CellSize, "Cell size", cellSize);
+            ->insert(CellSize, "Cell size", cellSize)
+            ->insert(Interpolation, "Interpolation", 0);
 
         this->_database->print();
 
@@ -97,10 +89,11 @@ namespace SPH {
         this->_gridParams = this->_grid->getParams();
 
         this->_updateParams();
-
         this->_createBuffers();
 
         this->_marchingRenderer = new Marching::Renderer(this->_grid);
+        this->_marchingRenderer
+            ->setInterpolation(this->_database->selectValue(Interpolation));
 
         cudaEventCreate(&this->_startFPS);
         cudaEventCreate(&this->_stopFPS);
@@ -198,7 +191,7 @@ namespace SPH {
 
     ////////////////////////////////////////////////////////////////////////////
 
-    void Simulator::update(float x, float y, float z) {
+    void Simulator::update(bool animate, float x, float y, float z) {
         float3 gravity = make_float3(x, y, z);
 
         this->_grid->hash((float4*) this->getPositions());
@@ -251,12 +244,14 @@ namespace SPH {
             this->_marchingRenderer->render();
         }
 
-        this->_step1();
-        this->_step2();
-        this->_integrate(
-            this->_database->selectValue(Timestep),
-            gravity
-        );
+        if (animate) {
+            this->_step1();
+            this->_step2();
+            this->_integrate(
+                this->_database->selectValue(Timestep),
+                gravity
+            );
+        }
         cutilSafeCall(cutilDeviceSynchronize());
 
         float time;
@@ -268,7 +263,7 @@ namespace SPH {
         this->_iterFPS++;
         this->_sumTimeFPS += 1000 / time;
 
-        cout << "Time for the kernel: " << this->_sumTimeFPS / this->_iterFPS << " fps" << endl;
+        //cout << "Time for the kernel: " << this->_sumTimeFPS / this->_iterFPS << " fps" << endl;
         cudaEventRecord(this->_startFPS, 0);
 
     }
@@ -276,8 +271,17 @@ namespace SPH {
     ////////////////////////////////////////////////////////////////////////////
 
     void Simulator::valueChanged(Settings::RecordType type) {
-        cout << "Value changed: " << type << endl;
-        this->_updateParams();
+        switch (type) {
+            case Interpolation:
+                this->_marchingRenderer
+                    ->setInterpolation(
+                        this->_database->selectValue(Interpolation)
+                    );
+                break;
+            default:
+                this->_updateParams();
+                break;
+        }
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -347,9 +351,9 @@ namespace SPH {
             }
         }
 
-        positions[0].x = 0.0f;
-        positions[0].y = 0.0f;
-        positions[0].z = 0.0f;
+//         positions[0].x = 0.0f;
+//         positions[0].y = 0.0f;
+//         positions[0].z = 0.0f;
 
 //         positions[1].x = 0.05f;
 //         positions[1].y = 0.0f;
@@ -475,6 +479,12 @@ namespace SPH {
 
     ////////////////////////////////////////////////////////////////////////////
 
+    int Simulator::getRenderMode() {
+        return this->_renderMode;
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+
     Particles::GridMinMax Simulator::getGridMinMax() {
         Particles::GridMinMax grid;
         grid.min = this->_gridParams.min;
@@ -540,10 +550,6 @@ namespace SPH {
             ->addBuffer(SortedViscosities, (Buffer::Abstract<void>*) sViscosity);
 
         this->_bufferManager->allocateBuffers(this->_numParticles);
-
-        size_t usage = Buffer::Allocator::getInstance()->getUsage(Buffer::Device);
-        std::cout << "Memory usage: "
-            << usage / 1024.0 / 1024.0 << " MB\n";
 
         // !!! WARNING !!!
         // without binding vertex buffers can't return valid pointer to memory
