@@ -8,6 +8,6 @@ layout(location = 0)   out vec3 oPosition;
 layout(location = 1)   out vec3 oNormal;
 
 void main() {
-    oPosition.xyz = position.xyz;
-    oNormal         = normalize(normal.xyz);
+    oPosition = position.xyz;
+    oNormal = normalize(normal.xyz);
 }

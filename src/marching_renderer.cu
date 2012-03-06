@@ -156,7 +156,6 @@ namespace Marching {
         );
 
         if (this->_interpolation) {
-//             cout << "interpolating" << endl;
             Marching::Kernel::interpolateNormals<<<gridDim, NTHREADS>>>(
                 this->_vertexData,
                 this->_voxelData,
@@ -166,8 +165,6 @@ namespace Marching {
                 activeVoxels,
                 this->_gridParams.cellSize
             );
-        }  else {
-//             cout << "not interpolating" << endl;
         }
 
         cutilSafeCall(cutilDeviceSynchronize());
@@ -340,13 +337,17 @@ namespace Marching {
         // TABLE BUFFERS
         this->_tableBuffMan = new Buffer::Manager<Marching::Buffers>();
 
-        Buffer::Memory<uint>* edges       = new Buffer::Memory<uint>();
-        Buffer::Memory<uint>* triangles   = new Buffer::Memory<uint>();
-        Buffer::Memory<uint>* numVertices = new Buffer::Memory<uint>();
+        Buffer::Memory<uint>* edges            = new Buffer::Memory<uint>();
+        Buffer::Memory<uint>* triangles        = new Buffer::Memory<uint>();
+        Buffer::Memory<uint>* numVertices      = new Buffer::Memory<uint>();
+        Buffer::Memory<uint>* adjacentEdges    = new Buffer::Memory<uint>();
+        Buffer::Memory<int3>* adjacentEdgesPos = new Buffer::Memory<int3>();
 
         triangles->allocate(256*16);
         edges->allocate(256);
         numVertices->allocate(256);
+        adjacentEdges->allocate(36);
+        adjacentEdgesPos->allocate(36);
 
         this->_tableBuffMan
             ->addBuffer(
@@ -360,6 +361,14 @@ namespace Marching {
             ->addBuffer(
                 Marching::NumVerticesTable,
                 (Buffer::Abstract<void>*) numVertices
+            )
+            ->addBuffer(
+                Marching::AdjacentEdgesTable,
+                (Buffer::Abstract<void>*) adjacentEdges
+            )
+            ->addBuffer(
+                Marching::AdjacentEdgesPosTable,
+                (Buffer::Abstract<void>*) adjacentEdgesPos
             );
 
 
@@ -369,13 +378,18 @@ namespace Marching {
         edges->copyFrom(Marching::Tables::edges, Buffer::Host);
         triangles->copyFrom(Marching::Tables::triangles, Buffer::Host);
         numVertices->copyFrom(Marching::Tables::numVertices, Buffer::Host);
+        adjacentEdges->copyFrom(Marching::Tables::adjacentEdges, Buffer::Host);
+        adjacentEdgesPos
+            ->copyFrom(Marching::Tables::adjacentEdgesPos, Buffer::Host);
 
         cutilSafeCall(cutilDeviceSynchronize());
 
 
-        this->_tableData.edges       = edges->get();
-        this->_tableData.triangles   = triangles->get();
-        this->_tableData.numVertices = numVertices->get();
+        this->_tableData.edges            = edges->get();
+        this->_tableData.triangles        = triangles->get();
+        this->_tableData.numVertices      = numVertices->get();
+        this->_tableData.adjacentEdges    = adjacentEdges->get();
+        this->_tableData.adjacentEdgesPos = adjacentEdgesPos->get();
 
         this->_tableBuffMan->unbindBuffers();
 

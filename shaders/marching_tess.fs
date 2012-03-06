@@ -12,8 +12,10 @@ layout(location = 0) out vec4 oColour;
 void main() {
 
     vec3 N = normalize(normal);
-    vec3 L = lightPosition;
-    float df = abs(dot(N, L));
+    vec3 lightPos = vec3(1,1,1);
+    vec3 L = normalize(lightPos);
+    float df = clamp(dot(N, L), 0 , 1);
+
     vec3 color = ambientMaterial + df * diffuseMaterial;
 
     oColour = vec4(color, 1.0);

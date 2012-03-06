@@ -81,6 +81,7 @@ namespace SPH {
                         rLen
                     );
                 */
+
                 /*data.pressureForce +=
                     (
                         (data.pressure + data.pressureN) /
@@ -92,6 +93,7 @@ namespace SPH {
                         rLen
                     );
                 */
+
                 data.viscosityForce +=
                     (
                         (data.veleval  - data. velevalN ) /

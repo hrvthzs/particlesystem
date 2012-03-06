@@ -103,6 +103,6 @@ void main()
     oPosition = finalPos;
     oPatchDistance = gl_TessCoord;
 
-    gl_Position   = mvp * vec4(finalPos,1.0);
+    gl_Position   = mvp * vec4(finalPos, 1.0);
 
 }

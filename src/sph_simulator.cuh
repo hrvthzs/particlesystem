@@ -5,6 +5,7 @@
 #include <cutil_math.h>
 #include "buffer_manager.cuh"
 #include "buffer_vertex.h"
+#include "colors.cuh"
 #include "grid_uniform.cuh"
 #include "marching_renderer.cuh"
 #include "particles.h"
@@ -135,6 +136,16 @@ namespace SPH {
             uint _iterFPS;
             uint _sumTimeFPS;
 
+            uint _lastAnimatedParticle;
+            uint _numAnimatedParticles;
+
+            float _animationForce;
+
+            bool _animChangeAxis;
+
+            Colors::Gradient _colorGradient;
+            Colors::Source _colorSource;
+
         private:
             /**
              * Integrate simulator
@@ -169,6 +180,11 @@ namespace SPH {
              * Calculate force vectors (pressure and viscosity)
              */
             void _step2();
+
+            /**
+             * Run animation
+             */
+            void _animate();
 
     };
 

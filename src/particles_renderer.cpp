@@ -11,7 +11,7 @@ namespace Particles {
     Renderer::Renderer(Simulator* simulator) {
         this->_simulator = simulator;
 
-        this->_numParticles = 15000;
+        this->_numParticles = 25000;
 
         this->_animate = false;
         this->_drawNormals = false;
@@ -357,7 +357,8 @@ namespace Particles {
 
         if (this->_run) {
             this->_simulator->update(
-                this->_animate, gravity.x, gravity.y, gravity.z
+                this->_intergrate,
+                gravity.x, gravity.y, gravity.z
             );
         }
 
@@ -412,7 +413,8 @@ namespace Particles {
         SDLKey key,
         Uint16 modifier
     ) {
-        float i;
+        float i, f;
+        int g, s, n;
 
         switch(key) {
             case SDLK_ESCAPE:
@@ -421,8 +423,11 @@ namespace Particles {
             case SDLK_r:
                 this->_run = !this->_run;
                 break;
+            case SDLK_e:
+                this->_intergrate = !this->_intergrate;
             case SDLK_a:
                 this->_animate = !this->_animate;
+                this->_simulator->setAnimated(this->_animate);
                 break;
             case SDLK_c:
                 this->_simulator->generateParticles();
@@ -444,6 +449,14 @@ namespace Particles {
                     this->_simulator->getRenderMode()
                 );
                 break;
+            case SDLK_g:
+                g = this->_simulator->getValue(Settings::ColorGradient) + 1;
+                this->_simulator->setValue(Settings::ColorGradient, g % 5);
+                break;
+            case SDLK_s:
+                s = this->_simulator->getValue(Settings::ColorSource) + 1;
+                this->_simulator->setValue(Settings::ColorSource, s % 2);
+                break;
             case SDLK_F1:
                 this->_renderMode = RenderPoints;
                 this->_simulator->setRenderMode(this->_renderMode);
@@ -462,7 +475,6 @@ namespace Particles {
                 break;
             case SDLK_F5:
                 this->_renderMode = RenderTesselationTriangles;
-                this->_simulator->setRenderMode(this->_renderMode);
                 this->_simulator->setRenderMode(RenderMarching);
                 break;
             case SDLK_w:
@@ -485,6 +497,28 @@ namespace Particles {
                         this->_tessAlpha -= 0.1f;
                     }
                 }
+                break;
+            case SDLK_f:
+                f = this->_simulator->getValue(Settings::AnimPartForce);
+                if (modifier & KMOD_LCTRL && f > 0.0f) {
+                    f -= 0.25;
+                } else {
+                    f += 0.25;
+                }
+                this->_simulator->setValue(Settings::AnimPartForce, f);
+                break;
+            case SDLK_p:
+                n = this->_simulator->getValue(Settings::AnimPartNum);
+                if (modifier & KMOD_LCTRL && n > 1) {
+                    n--;
+                } else {
+                    n++;
+                }
+                this->_simulator->setValue(Settings::AnimPartNum, n);
+                break;
+            case SDLK_x:
+                i = this->_simulator->getValue(Settings::AnimChangeAxis);
+                this->_simulator->setValue(Settings::AnimChangeAxis, !i);
                 break;
             default:
                 break;
@@ -715,7 +749,7 @@ namespace Particles {
             ->setUniform1f("tessAlpha", this->_tessAlpha)
             ->setUniformMatrix4fv("mvp", 1, GL_FALSE, mvp)
             ->setUniformMatrix3fv("mn", 1, GL_FALSE, mn)
-            ->setUniform3f("lightPosition", 0.0f, 2.0f, 0.0f)
+            ->setUniform3f("lightPosition", 0.0f, 5.0f, 5.0f)
             ->setUniform3f("diffuseMaterial", 0.09f, 0.31f, 0.98f)
             ->setUniform3f("ambientMaterial", 0.04f, 0.04f, 0.04f);
 
@@ -745,7 +779,7 @@ namespace Particles {
             ->setUniform1f("tessAlpha", this->_tessAlpha)
             ->setUniformMatrix4fv("mvp", 1, GL_FALSE, mvp)
             ->setUniformMatrix3fv("mn", 1, GL_FALSE, mn)
-            ->setUniform3f("lightPosition", 0.0f, 2.0f, 0.0f)
+            ->setUniform3f("lightPosition", 0.0f, 5.0f, 5.0f)
             ->setUniform3f("diffuseMaterial", 0.09f, 0.31f, 0.98f)
             ->setUniform3f("ambientMaterial", 0.04f, 0.04f, 0.04f);
 

@@ -301,16 +301,16 @@ namespace Marching {
 
         inline __device__ float4 getNormal(
             int3 cell,
-            Marching::VertexData vertexData,
-            Marching::VoxelData voxelData,
-            Marching::TableData tableData,
+            Marching::VertexData &vertexData,
+            Marching::VoxelData &voxelData,
+            Marching::TableData &tableData,
             uint edge
         ) {
             uint voxel = computeIndex(cell);
             uint cubeIndex = voxelData.cubeIndex[voxel];
             float4 normal = make_float4(0.0f);
 
-            for(int i=0; i<16; i++) {
+            for(int i=0; i<tableData.numVertices[cubeIndex]; i++) {
                 if (tableData.triangles[cubeIndex * 16 + i] == edge) {
                     uint ind = voxelData.verticesScan[voxel] + i;
                     normal += vertexData.normals[ind];
@@ -369,165 +369,45 @@ namespace Marching {
             int3 cell = computeVoxelPosition(voxel);
             uint cubeIndex = voxelData.cubeIndex[voxel];
 
-//             if (
-//                 cell.x + 1 == cudaGridParams.resolution.x ||
-//                 cell.y + 1 == cudaGridParams.resolution.y ||
-//                 cell.z + 1 == cudaGridParams.resolution.z
-//             ) {
-//                 return;
-//             }
-
             float4 normals[12];
+            bool usedEdges[12];
 
             for(int i=0; i<12; i++) {
                 normals[i] = make_float4(0.0f);
+                usedEdges[i] = false;
             }
 
-            for(int i=0; i<16; i++) {
+            for(int i=0; i<tableData.numVertices[cubeIndex]; i++) {
                 uint edge = tableData.triangles[cubeIndex * 16 + i];
-                if (edge != 255 ) {
-                    uint ind = voxelData.verticesScan[voxel] + i;
-                    normals[edge] += vertexData.normals[ind];
-                } else {
-                    break;
+                uint ind = voxelData.verticesScan[voxel] + i;
+                normals[edge] += vertexData.normals[ind];
+                usedEdges[edge] = true;
+            }
+
+            for (int i=0; i<12; i++) {
+                if (!usedEdges[i]) {
+                    continue;
+                }
+
+                for (int j=0; j<3; j++) {
+                    uint edge = tableData.adjacentEdges[i*3 + j];
+                    int3 adjCell = cell + tableData.adjacentEdgesPos[i*3 + j];
+                    normals[i] +=
+                    getNormal(
+                        adjCell,
+                        vertexData,
+                        voxelData,
+                        tableData,
+                        edge
+                    );
                 }
             }
 
-            cell.y--;
-            normals[0] += getNormal(cell, vertexData, voxelData, tableData, 4);
-            cell.y++;
-            cell.z--;
-            normals[0] += getNormal(cell, vertexData, voxelData, tableData, 2);
-            cell.y--;
-            normals[0] += getNormal(cell, vertexData, voxelData, tableData, 6);
-            cell.y++;
-            cell.z++;
-
-            cell.z++;
-            normals[2] += getNormal(cell, vertexData, voxelData, tableData, 0);
-            cell.z--;
-            cell.y--;
-            normals[2] += getNormal(cell, vertexData, voxelData, tableData, 6);
-            cell.z++;
-            normals[2] += getNormal(cell, vertexData, voxelData, tableData, 4);
-            cell.y++;
-            cell.z--;
-
-            cell.z--;
-            normals[4] += getNormal(cell, vertexData, voxelData, tableData, 6);
-            cell.z++;
-            cell.y++;
-            normals[4] += getNormal(cell, vertexData, voxelData, tableData, 0);
-            cell.z--;
-            normals[4] += getNormal(cell, vertexData, voxelData, tableData, 2);
-            cell.y--;
-            cell.z++;
-
-            cell.y++;
-            normals[6] += getNormal(cell, vertexData, voxelData, tableData, 2);
-            cell.y--;
-            cell.z++;
-            normals[6] += getNormal(cell, vertexData, voxelData, tableData, 4);
-            cell.y++;
-            normals[6] += getNormal(cell, vertexData, voxelData, tableData, 0);
-            cell.y--;
-            cell.z--;
-
-
-            // 8 9 10 11
-            cell.x--;
-            normals[8] += getNormal(cell, vertexData, voxelData, tableData, 9);
-            cell.x++;
-            cell.z--;
-            normals[8] += getNormal(cell, vertexData, voxelData, tableData, 11);
-            cell.x--;
-            normals[8] += getNormal(cell, vertexData, voxelData, tableData, 10);
-            cell.x++;
-            cell.z++;
-
-            cell.x++;
-            normals[9] += getNormal(cell, vertexData, voxelData, tableData, 8);
-            cell.x--;
-            cell.z--;
-            normals[9] += getNormal(cell, vertexData, voxelData, tableData, 10);
-            cell.x++;
-            normals[9] += getNormal(cell, vertexData, voxelData, tableData, 11);
-            cell.x--;
-            cell.z++;
-
-            cell.x++;
-            normals[10] += getNormal(cell, vertexData, voxelData, tableData, 11);
-            cell.x--;
-            cell.z++;
-            normals[10] += getNormal(cell, vertexData, voxelData, tableData, 9);
-            cell.x++;
-            normals[10] += getNormal(cell, vertexData, voxelData, tableData, 8);
-            cell.x--;
-            cell.z--;
-
-            cell.x--;
-            normals[11] += getNormal(cell, vertexData, voxelData, tableData, 10);
-            cell.x++;
-            cell.z++;
-            normals[11] += getNormal(cell, vertexData, voxelData, tableData, 8);
-            cell.x--;
-            normals[11] += getNormal(cell, vertexData, voxelData, tableData, 9);
-            cell.x++;
-            cell.z--;
-
-            cell.x++;
-            normals[1] += getNormal(cell, vertexData, voxelData, tableData, 3);
-            cell.x--;
-            cell.y--;
-            normals[1] += getNormal(cell, vertexData, voxelData, tableData, 5);
-            cell.x++;
-            normals[1] += getNormal(cell, vertexData, voxelData, tableData, 7);
-            cell.x--;
-            cell.y++;
-
-            cell.x--;
-            normals[3] += getNormal(cell, vertexData, voxelData, tableData, 1);
-            cell.x++;
-            cell.y--;
-            normals[3] += getNormal(cell, vertexData, voxelData, tableData, 7);
-            cell.x--;
-            normals[3] += getNormal(cell, vertexData, voxelData, tableData, 5);
-            cell.x++;
-            cell.y++;
-
-            cell.x++;
-            normals[5] += getNormal(cell, vertexData, voxelData, tableData, 7);
-            cell.x--;
-            cell.y++;
-            normals[5] += getNormal(cell, vertexData, voxelData, tableData, 1);
-            cell.x++;
-            normals[5] += getNormal(cell, vertexData, voxelData, tableData, 3);
-            cell.x--;
-            cell.y--;
-
-            cell.x--;
-            normals[7] += getNormal(cell, vertexData, voxelData, tableData, 5);
-            cell.x++;
-            cell.y++;
-            normals[7] += getNormal(cell, vertexData, voxelData, tableData, 3);
-            cell.x--;
-            normals[7] += getNormal(cell, vertexData, voxelData, tableData, 1);
-            cell.x++;
-            cell.y--;
-
-            for(int i=0; i<16; i++) {
+            for(int i=0; i<tableData.numVertices[cubeIndex]; i++) {
                 uint edge = tableData.triangles[cubeIndex * 16 + i];
-                if (edge != 255) {
-                    uint ind = voxelData.verticesScan[voxel] + i;
-                    vertexData.inormals[ind] = normals[edge];
-                    //vertexData.inormals[ind] = make_float4(0,0,0,0);
-
-                } else {
-                    break;
-                }
+                uint ind = voxelData.verticesScan[voxel] + i;
+                vertexData.inormals[ind] = normals[edge];
             }
-
-
 
         }
 

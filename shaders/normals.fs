@@ -1,13 +1,11 @@
 #version 330
 
-in Data
-{
+in Data {
     vec4 color;
 } gdata;
 
 out vec4 outputColor;
 
-void main()
-{
+void main() {
     outputColor = gdata.color;
 }

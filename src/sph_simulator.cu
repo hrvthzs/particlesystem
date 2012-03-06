@@ -39,6 +39,13 @@ namespace SPH {
 
     void Simulator::init(uint numParticles) {
         this->_numParticles = numParticles;
+        this->_colorGradient = Colors::HSVBlueToRed;
+        this->_colorSource = Colors::Velocity;
+        this->_lastAnimatedParticle = 0;
+        this->_numAnimatedParticles = 5;
+        this->_animationForce = 5;
+        this->_animation = true;
+        this->_animChangeAxis = true;
 
         // DATABASE
         this->_database
@@ -55,7 +62,7 @@ namespace SPH {
             ->insert(SimulationScale, "Sim. scale", 0.0f, 1.0f, 1.0f)
             ->insert(KineticFriction, "Kinet. fric.", 0.0f, 10000.0f, 0.0f)
             ->insert(StaticFrictionLimit, "Stat. Fric. Lim.", 0.0f, 10000.0f, 0.0f)
-            ->insert(DynamicColoring, "DynamicColoring", 0.0f, true);
+            ->insert(DynamicColoring, "DynamicColoring", 1.0f, true);
 
         float particleMass = 1.0 * pow(10, -7);
         float particleRestDist =
@@ -75,7 +82,12 @@ namespace SPH {
             ->insert(BoundaryDistance, "Bound. dist.", boundaryDist)
             ->insert(SmootingLength, "Smooth. len.", smoothingLength)
             ->insert(CellSize, "Cell size", cellSize)
-            ->insert(Interpolation, "Interpolation", 0);
+            ->insert(Interpolation, "Interpolation", 1)
+            ->insert(ColorSource, "Color source", this->_colorSource)
+            ->insert(ColorGradient, "Color gradient", this->_colorGradient)
+            ->insert(AnimPartNum, "Anim. p. num.", this->_numAnimatedParticles)
+            ->insert(AnimPartForce, "Anim. part. force", this->_animationForce)
+            ->insert(AnimChangeAxis, "Anim. change axis", this->_animChangeAxis);
 
         this->_database->print();
 
@@ -117,8 +129,6 @@ namespace SPH {
 
      float* Simulator::getPositions() {
         return (float*) this->_bufferManager->get(Positions)->get();
-        //Marching::VertexData data = this->_marchingRenderer->getData();
-        //return (float*) data.positions;
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -140,7 +150,6 @@ namespace SPH {
         this->_bufferManager->unbindBuffers();
         this->_marchingRenderer->unbindBuffers();
     }
-
 
     ////////////////////////////////////////////////////////////////////////////
 
@@ -173,6 +182,7 @@ namespace SPH {
 
     void Simulator::_integrate(float deltaTime, float3 gravity) {
         uint minBlockSize, numBlocks, numThreads;
+
         minBlockSize = 416;
         Utils::computeGridSize(
             this->_numParticles, minBlockSize, numBlocks, numThreads
@@ -184,74 +194,66 @@ namespace SPH {
             gravity,
             this->_particleData,
             this->_sortedData,
-            this->_grid->getData()
+            this->_grid->getData(),
+            this->_colorGradient,
+            this->_colorSource
         );
-
     }
 
     ////////////////////////////////////////////////////////////////////////////
 
-    void Simulator::update(bool animate, float x, float y, float z) {
+    void Simulator::_animate() {
+
+        uint num = pow(this->_numAnimatedParticles, 2);
+
+        uint minBlockSize, numBlocks, numThreads;
+
+        minBlockSize = this->_numAnimatedParticles;
+        Utils::computeGridSize(num, minBlockSize, numBlocks, numThreads);
+
+        Kernel::animate<<<numBlocks, numThreads>>>(
+            this->_numParticles,
+            this->_lastAnimatedParticle,
+            this->_animationForce,
+            this->_animChangeAxis,
+            this->_particleData,
+            this->_grid->getData()
+        );
+
+        this->_lastAnimatedParticle += num;
+
+        if (this->_lastAnimatedParticle >= this->_numParticles) {
+            this->_lastAnimatedParticle = 0;
+        }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+
+    void Simulator::update(bool intergrate, float x, float y, float z) {
         float3 gravity = make_float3(x, y, z);
 
         this->_grid->hash((float4*) this->getPositions());
         this->_grid->sort();
         this->_orderData();
 
-        /*Buffer::Memory<float>* buffer =
-            new Buffer::Memory<float>(new Buffer::Allocator(), Buffer::Host);
-
-            buffer->allocate(this->_numParticles);
-
-        GridData gridData = this->_grid->getData();
-
-        cudaMemcpy(buffer->get(), this->_sortedData.neighbours, this->_numParticles * sizeof(float), cudaMemcpyDeviceToHost);
-
-        float* e = buffer->get();
-        */
-        Buffer::Memory<float4>* posBuffer =
-            new Buffer::Memory<float4>(Buffer::Host);
-
-        posBuffer->allocate(this->_numParticles);
-
-        cudaMemcpy(posBuffer->get(), this->_sortedData.viscosity, this->_numParticles * sizeof(float4), cudaMemcpyDeviceToHost);
-        float4* pos = posBuffer->get();
-
-        /*Buffer::Memory<int3>* cellBuffer =
-        new Buffer::Memory<int3>(new Buffer::Allocator(), Buffer::Host);
-
-        cellBuffer->allocate(this->_numParticles);
-
-        cudaMemcpy(cellBuffer->get(), this->_sortedData.cellPos, this->_numParticles * sizeof(int3), cudaMemcpyDeviceToHost);
-        int3* cell = cellBuffer->get();
-        */
-        //cutilSafeCall(cutilDeviceSynchronize());
-        //int c = 0;
-        /*for(uint i=0;i< this->_numParticles; i++) {
-            //cout << e[i] << " " << pos[i].x << " " << pos[i].y << " " << pos[i].z << endl;
-            cout << pos[i].x << " " << pos[i].y << " " << pos[i].z << endl;
-            //cout << e[i] << " " << cell[i].x << " " << cell[i].y << " " << cell[i].z << endl;
-            //cout << e[i] << endl;
-            //if (e[i] < 18) c++;
-            //cout << "-----" << endl;
-        }
-
-        std::cout << "____________________" << std::endl;
-        //std::cout << c << std::endl;
-        */
-
         if (this->_renderMode == Particles::RenderMarching) {
             this->_marchingRenderer->render();
         }
 
-        if (animate) {
+        if (intergrate) {
             this->_step1();
             this->_step2();
+
             this->_integrate(
                 this->_database->selectValue(Timestep),
                 gravity
             );
+
+            if (this->_animation) {
+                this->_animate();
+            }
         }
+
         cutilSafeCall(cutilDeviceSynchronize());
 
         float time;
@@ -272,11 +274,31 @@ namespace SPH {
 
     void Simulator::valueChanged(Settings::RecordType type) {
         switch (type) {
+            case AnimChangeAxis:
+                this->_animChangeAxis =
+                    this->_database->selectValue(AnimChangeAxis);
+                break;
+            case AnimPartForce:
+                this->_animationForce =
+                    this->_database->selectValue(AnimPartForce);
+                break;
+            case AnimPartNum:
+                this->_numAnimatedParticles =
+                    this->_database->selectValue(AnimPartNum);
+                break;
+            case ColorGradient:
+                this->_colorGradient =
+                    (Colors::Gradient) this->_database->selectValue(ColorGradient);
+                break;
+            case ColorSource:
+                this->_colorSource =
+                    (Colors::Source) this->_database->selectValue(ColorSource);
+                break;
             case Interpolation:
                 this->_marchingRenderer
-                    ->setInterpolation(
-                        this->_database->selectValue(Interpolation)
-                    );
+                ->setInterpolation(
+                    this->_database->selectValue(Interpolation)
+                );
                 break;
             default:
                 this->_updateParams();
@@ -306,20 +328,6 @@ namespace SPH {
 
         uint resolution = ceil(pow(this->_numParticles, 1.0/3.0));
 
-        /*for (uint x=0; x<resolution; x++) {
-            for (uint y=0; y<resolution; y++) {
-                for (uint z=0; z<resolution; z++) {
-                    uint index = x + y*resolution + z*resolution*resolution;
-                    if (index < this->_numParticles) {
-                        positions[index].x = 1.0 / resolution * (x+1) - 0.5;
-                        positions[index].y = 1.0 / resolution * (y+1) - 0.5;
-                        positions[index].z = 1.0 / resolution * (z+1) - 0.5;
-                        positions[index].w = 1.0;
-                    }
-                }
-            }
-        }*/
-
         GridParams params = this->_grid->getParams();
         float centering = this->_database->selectValue(CellSize) / 2.0f;
 
@@ -331,9 +339,6 @@ namespace SPH {
                         positions[index].x = 1.0 / resolution * (x+1) - 1.0;
                         positions[index].y = 2.0 / resolution * (y+1) - 1.5;
                         positions[index].z = 1.0 / resolution * (z+1) - 1.0;
-                        //positions[index].x = 1.0 / resolution * (x+1) - 0.5 - centering;
-                        //positions[index].y = 1.0 / resolution * (y+1) - 0.5 - centering;
-                        //positions[index].z = 1.0 / resolution * (z+1) - 0.5 - centering;
                         positions[index].w = 1.0;
 
                         if (this->_fluidParams.dynamicColoring)
@@ -350,76 +355,6 @@ namespace SPH {
                 }
             }
         }
-
-//         positions[0].x = 0.0f;
-//         positions[0].y = 0.0f;
-//         positions[0].z = 0.0f;
-
-//         positions[1].x = 0.05f;
-//         positions[1].y = 0.0f;
-//         positions[1].z = 0.0f;
-
-//         positions[2].x = 0.05f;
-//         positions[2].y = 0.05f;
-//         positions[2].z = 0.0f;
-
-//         positions[3].x = 0.0f;
-//         positions[3].y = -0.05f;
-//         positions[3].z = -0.05f;
-
-        /*positions[2].x = -0.5f;
-        positions[2].y = 0.5f;
-        positions[2].z = -0.5f;
-
-        positions[3].x = 0.5f;
-        positions[3].y = 0.5f;
-        positions[3].z = -0.5f;
-
-        positions[4].x = -0.5f;
-        positions[4].y = -0.5f;
-        positions[4].z = 0.5f;
-
-        positions[5].x = 0.5f;
-        positions[5].y = -0.5f;
-        positions[5].z = 0.5f;
-
-        positions[6].x = -0.5f;
-        positions[6].y = 0.5f;
-        positions[6].z = 0.5f;
-
-        positions[7].x = 0.5f;
-        positions[7].y = 0.5f;
-        positions[7].z = 0.5f;*/
-
-        /*positions[0].x = -0.8549;
-        positions[0].y = 0.6905;
-        positions[0].z = 0.8506;
-
-        positions[1].x = -0.01387;
-        positions[1].y = 0.8481;
-        positions[1].z = 0.01657;
-
-        positions[2].x = 1.014;
-        positions[2].y = 0.846;
-        positions[2].z = 0.01484;
-
-        positions[3].x = 1.013;
-        positions[3].y = 0.8424;
-        positions[3].z = -0.5224;
-
-        positions[4].x = -0.0115;
-        positions[4].y = -0.1777;
-        positions[4].z = 0.002949;
-        */
-        /*positions[5].x = 1.013;
-        positions[5].y = -0.1771;
-        positions[5].z = 0.002701;
-
-        positions[6].x = -0.8543;
-        positions[6].y = -1.012;
-        positions[6].z = -0.8425;*/
-
-
 
         cudaMemcpy(
             this->_particleData.position,

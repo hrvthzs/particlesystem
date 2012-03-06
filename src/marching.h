@@ -7,6 +7,8 @@ namespace Marching {
         EdgesTable,
         TrianglesTable,
         NumVerticesTable,
+        AdjacentEdgesTable,
+        AdjacentEdgesPosTable,
 
         VoxelVertices,
         VoxelVerticesScan,
@@ -33,6 +35,8 @@ namespace Marching {
         uint* edges;
         uint* triangles;
         uint* numVertices;
+        uint* adjacentEdges;
+        int3* adjacentEdgesPos;
     };
 
     struct sVertexData {

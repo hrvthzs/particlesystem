@@ -94,7 +94,6 @@ namespace Colors {
         Gradient gradient,
         Source source,
         float3 velocity,
-        float pressure,
         float3 force
     ) {
         float3 color = make_float3(0);
@@ -107,43 +106,20 @@ namespace Colors {
                         fabs(velocity.x)+
                         fabs(velocity.y)+
                         fabs(velocity.z) / 11000.0f;
-                    value = clamp(value, 0.0f, 1.0f);
-                    color =  calculateGradient(gradient, value);
-                }
-                break;
-            case Pressure:
-                // color given by pressure
-                {
-                    float value =
-                        clamp(
-                            (
-                                (pressure - cudaFluidParams.restPressure)
-                                / 1000.0f
-                            ), 0.1f, 1.0f
-                        );
+                    value = clamp(value, 0.1f, 1.0f);
                     color =  calculateGradient(gradient, value);
                 }
                 break;
             case Force:
                 // color given by force
                 {
-                    if(gradient == Direct) {
-                        color =
-                            clamp(
-                                fabs(force) / 80.0f,
-                                make_float3(0),
-                                make_float3(1)
-                            );
-                    } else {
-                        force /= 2.0f;
-                        float value =
-                            clamp(
-                                (force.x + force.y + force.z) / 3.0f,
-                                0.1f,
-                                1.0f
-                            );
-                        color =  calculateGradient(gradient, value);
-                    }
+                    float value =
+                        clamp(
+                            (force.x + force.y + force.z) / 3.0f,
+                            0.1f,
+                            1.0f
+                        );
+                    color =  calculateGradient(gradient, value);
                 }
                 break;
         }

@@ -4,7 +4,6 @@
 namespace Colors {
 
     enum Gradient {
-        Direct,
         White,
         Blackish,
         BlackToCyan,
@@ -14,7 +13,6 @@ namespace Colors {
 
     enum Source {
         Force,
-        Pressure,
         Velocity
     };
 

@@ -202,6 +202,7 @@ namespace Particles {
 
             bool _animate;
             bool _run;
+            bool _intergrate;
             bool _dynamicColoring;
             bool _drawNormals;
 

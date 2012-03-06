@@ -14,14 +14,14 @@ layout(location=0) out vec4 oColor;
 float amplify(float d, float scale, float offset) {
     d = scale * d + offset;
     d = clamp(d, 0, 1);
-    d = 1 - exp2(-2*d*d);
+    d = 1 - exp2(-2.0 * d * d);
     return d;
 }
 
 void main() {
     vec3 N = normalize(iFacetNormal);
-    vec3 L = lightPosition;
-    float df = abs(dot(N, L));
+    vec3 L = normalize(vec3(1,1,1));
+    float df = clamp(dot(N, L), 0, 1);
     vec3 color = ambientMaterial + df * diffuseMaterial;
 
     float d1 = min(min(iTriDistance.x, iTriDistance.y), iTriDistance.z);

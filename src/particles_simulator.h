@@ -133,8 +133,23 @@ namespace Particles {
          */
         virtual void valueChanged(Settings::RecordType type);
 
+        /**
+         * Set animated
+         *
+         * @param animate - flag
+         */
+        virtual void setAnimated(bool animate);
+
+        /**
+         * Is animated
+         */
+        virtual bool isAnimated();
+
 
     protected:
+
+        bool _animation;
+
         unsigned int _numParticles;
         unsigned int _numVertices;
 

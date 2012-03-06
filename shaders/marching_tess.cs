@@ -78,9 +78,9 @@ void main() {
     float V = (P0 + P1 + P2) / 3.0;
 
     oPnPatch[ID].b111 = E + (E - V) * 0.5;
-    oPnPatch[ID].n110 = N0 +N1 - vij(0, 1) * (P1 - P0);
-    oPnPatch[ID].n011 = N1 +N2 - vij(1, 2) * (P2 - P1);
-    oPnPatch[ID].n101 = N2 +N0 - vij(2, 0) * (P0 - P2);
+    oPnPatch[ID].n110 = N0 + N1 - vij(0, 1) * (P1 - P0);
+    oPnPatch[ID].n011 = N1 + N2 - vij(1, 2) * (P2 - P1);
+    oPnPatch[ID].n101 = N2 + N0 - vij(2, 0) * (P0 - P2);
 
     // set tess levels
     gl_TessLevelOuter[ID] = tessLevel;
