@@ -1,6 +1,7 @@
 #version 130
 
-in vec4 position, normal;
+in vec4 position;
+in vec4 normal;
 
 uniform mat4 mvp, mv;
 uniform mat3 mn;
@@ -9,11 +10,11 @@ uniform mat3 mn;
 uniform vec3 lightPosition;
 
 out vec3 gouraudColor;
-
 out vec3 eyePosition, eyeNormal;
 
 void main()
 {
+
     float mode = 0.0;
     float shininess = 0.0;
 

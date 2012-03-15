@@ -17,13 +17,19 @@ namespace Settings {
     };
 
     enum RecordType {
+        AnimPartForce,
+        AnimPartNum,
+        AnimChangeAxis,
         BoundaryDistance,
         BoundaryStiffness,
         BoundaryDampening,
         CellSize,
+        ColorGradient,
+        ColorSource,
         DynamicColoring,
         GasStiffness,
         GridSize,
+        Interpolation,
         KineticFriction,
         ParticleMass,
         ParticleNumber,

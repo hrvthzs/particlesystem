@@ -7,15 +7,19 @@ namespace Marching {
         EdgesTable,
         TrianglesTable,
         NumVerticesTable,
+        AdjacentEdgesTable,
+        AdjacentEdgesPosTable,
 
         VoxelVertices,
         VoxelVerticesScan,
         VoxelOccupied,
         VoxelOccupiedScan,
         VoxelCompact,
+        VoxelCubeIndex,
 
         VertexPosition,
-        VertexNormal
+        VertexNormal,
+        VertexINormal
     };
 
     struct sVoxelData {
@@ -24,17 +28,21 @@ namespace Marching {
         uint* occupied;
         uint* occupiedScan;
         uint* compact;
+        uint* cubeIndex;
     };
 
     struct sTableData {
         uint* edges;
         uint* triangles;
         uint* numVertices;
+        uint* adjacentEdges;
+        int3* adjacentEdgesPos;
     };
 
     struct sVertexData {
         float4* positions;
         float4* normals;
+        float4* inormals;
     };
 
     typedef enum eBuffers Buffers;

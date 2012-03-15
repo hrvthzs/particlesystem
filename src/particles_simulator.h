@@ -44,7 +44,7 @@ namespace Particles {
          * @param y gravity vector y
          * @param z gravity vector z
          */
-        virtual void update(float x, float y, float z) = 0;
+        virtual void update(bool animate, float x, float y, float z) = 0;
 
         /**
          * Get positions of particles
@@ -103,6 +103,12 @@ namespace Particles {
         virtual void setRenderMode(int mode) = 0;
 
         /**
+         * Get rendering mode of simulator
+         *
+         */
+        virtual int getRenderMode() = 0;
+
+        /**
          * Get struct containing wrapper grid min and max coords
          */
         virtual GridMinMax getGridMinMax() = 0;
@@ -127,8 +133,23 @@ namespace Particles {
          */
         virtual void valueChanged(Settings::RecordType type);
 
+        /**
+         * Set animated
+         *
+         * @param animate - flag
+         */
+        virtual void setAnimated(bool animate);
+
+        /**
+         * Is animated
+         */
+        virtual bool isAnimated();
+
 
     protected:
+
+        bool _animation;
+
         unsigned int _numParticles;
         unsigned int _numVertices;
 

@@ -11,9 +11,11 @@ namespace Particles {
     Renderer::Renderer(Simulator* simulator) {
         this->_simulator = simulator;
 
-        this->_numParticles = 15000;
+        this->_numParticles = 25000;
 
         this->_animate = false;
+        this->_drawNormals = false;
+        this->_run = true;
 
         this->_rotationX = 0.0f;
         this->_rotationY = 0.0f;
@@ -28,8 +30,8 @@ namespace Particles {
 
         this->_renderMode = RenderPoints;
 
-        this->_tessLevelInner = 2;
-        this->_tessLevelOuter = 3;
+        this->_tessLevel = 4.0f;
+        this->_tessAlpha = 1.0f;
 
     }
 
@@ -40,6 +42,8 @@ namespace Particles {
         delete this->_shaderProgram;
         delete this->_marchingProgram;
         delete this->_tesselationProgram;
+        delete this->_tesselationTrianglesProgram;
+        delete this->_normalsProgram;
         delete this->_cubeProgram;
     }
 
@@ -267,10 +271,25 @@ namespace Particles {
         this->_tesselationProgram = new Shader::Program();
         this->_tesselationProgram
             ->add(Shader::Vertex, "shaders/marching_tess.vs")
-            ->add(Shader::Geometry, "shaders/marching_tess.gs")
             ->add(Shader::Control, "shaders/marching_tess.cs")
             ->add(Shader::Evaluation, "shaders/marching_tess.es")
             ->add(Shader::Fragment, "shaders/marching_tess.fs")
+            ->link();
+
+        this->_tesselationTrianglesProgram = new Shader::Program();
+        this->_tesselationTrianglesProgram
+            ->add(Shader::Vertex, "shaders/marching_tess.vs")
+            ->add(Shader::Geometry, "shaders/marching_tess.gs")
+            ->add(Shader::Control, "shaders/marching_tess.cs")
+            ->add(Shader::Evaluation, "shaders/marching_tess.es")
+            ->add(Shader::Fragment, "shaders/marching_tess_triangles.fs")
+            ->link();
+
+        this->_normalsProgram = new Shader::Program();
+        this->_normalsProgram
+            ->add(Shader::Vertex, "shaders/normals.vs")
+            ->add(Shader::Geometry, "shaders/normals.gs")
+            ->add(Shader::Fragment, "shaders/normals.fs")
             ->link();
     }
 
@@ -328,35 +347,27 @@ namespace Particles {
             glm::vec3(0, 1, 0)
         );
 
-        glm::vec4 gravity = glm::vec4(0,-9.8,0,1);
-
-        gravity = mv2*gravity;
-        //cout << gravity.x << ", " << gravity.y << ", " << -gravity.z << endl;
-
+        glm::vec4 gravity = mv2* glm::vec4(0,-9.8,0,1);
         glm::mat4 mvp = projection*mv;
 
-        if (this->_animate) {
-            this->_simulator->update(gravity.x, gravity.y, gravity.z);
-        }
 
-        glm::vec2 windowSize =
-            glm::vec2(this->_windowWidth, this->_windowHeight);
+        GLfloat* mnPtr = glm::value_ptr(mn);
+        GLfloat* mvPtr = glm::value_ptr(mv);
+        GLfloat* mvpPtr = glm::value_ptr(mvp);
+
+        if (this->_run) {
+            this->_simulator->update(
+                this->_intergrate,
+                gravity.x, gravity.y, gravity.z
+            );
+        }
 
         glClearColor(1,1,1,0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glEnable(GL_DEPTH_TEST);
-        //glCullFace(GL_BACK);
-        //glEnable(GL_CULL_FACE);
-
-        glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
-
         this->_cubeProgram->enable();
-
-        this->_cubeProgram
-            ->setUniformMatrix4fv(
-                "mvp", 1, GL_FALSE, glm::value_ptr(mvp)
-            );
+        this->_cubeProgram->setUniformMatrix4fv("mvp", 1, GL_FALSE, mvpPtr);
 
 
         //TODO create VAO for VBOs and attributes
@@ -366,100 +377,32 @@ namespace Particles {
             "position", 4, GL_FLOAT, GL_FALSE, 0, (void*) 0
         );
 
-
         glDrawArrays(GL_LINES, 0, 96);
 
-        // Set matrices
-        if (this->_renderMode == RenderPoints) {
-
-            this->_shaderProgram->enable();
-
-            this->_shaderProgram
-                ->setUniformMatrix4fv(
-                    "mv", 1, GL_FALSE, glm::value_ptr(mv)
-                )
-                ->setUniformMatrix4fv(
-                    "mvp", 1, GL_FALSE, glm::value_ptr(mvp)
-                )
-                ->setUniform1f(
-                    "pointScale",
-                    this->_windowWidth / tanf(45.0f*0.5f*(float)M_PI/180.0f)
-                )
-                ->setUniform1f("pointRadius", 50.f)
-                ->setUniform1f("aspectRatio", this->_aspectRatio)
-                ->setUniform2fv("windowSize", 1, glm::value_ptr(windowSize));
-
-            //TODO create VAO for VBOs and attributes
-            // Draw data
-            glBindBuffer(GL_ARRAY_BUFFER, this->_simulator->getPositionsVBO());
-            this->_shaderProgram->setAttribute(
-                "position", 4, GL_FLOAT, GL_FALSE, 0, (void*) 0
-            );
-
-            glBindBuffer(GL_ARRAY_BUFFER, this->_simulator->getColorsVBO());
-            this->_shaderProgram->setAttribute(
-                "color", 4, GL_FLOAT, GL_FALSE, 0, (void*) 0
-            );
-
-            glDrawArrays(GL_POINTS, 0, this->_numParticles);
-        } else if (this->_renderMode == RenderMarching){
-
-            this->_marchingProgram->enable();
-
-            this->_marchingProgram
-                ->setUniformMatrix4fv(
-                    "mv", 1, GL_FALSE, glm::value_ptr(mv)
-                )
-                ->setUniformMatrix4fv(
-                    "mvp", 1, GL_FALSE, glm::value_ptr(mvp)
-                )
-                ->setUniformMatrix3fv(
-                    "mn", 1, GL_FALSE, glm::value_ptr(mn)
-                )
-                ->setUniform3f("lightPosition", 0.0f, 2.0f, 0.0f);
-
-            // Draw data
-            glBindBuffer(GL_ARRAY_BUFFER, this->_simulator->getPositionsVBO());
-            this->_marchingProgram->setAttribute(
-                "position", 4, GL_FLOAT, GL_FALSE, 0, (void*) 0
-            );
-
-            glBindBuffer(GL_ARRAY_BUFFER, this->_simulator->getNormalsVBO());
-            this->_marchingProgram->setAttribute(
-                "normal", 4, GL_FLOAT, GL_FALSE, 0, (void*) 0
-            );
-
-            glDrawArrays(GL_TRIANGLES, 0, this->_simulator->getNumVertices());
-
-        } else {
-            // Tesselation
-            this->_tesselationProgram->enable();
-
-            this->_tesselationProgram
-                ->setUniform1f("TessLevelInner", this->_tessLevelInner)
-                ->setUniform1f("TessLevelOuter", this->_tessLevelOuter)
-                ->setUniformMatrix4fv(
-                    "mvp", 1, GL_FALSE, glm::value_ptr(mvp)
-                )
-                ->setUniformMatrix3fv(
-                    "mn", 1, GL_FALSE, glm::value_ptr(mn)
-                )
-                ->setUniform3f("LightPosition", 0.0f, 2.0f, 0.0f)
-                ->setUniform3f("DiffuseMaterial", 0, 0.75, 0.75)
-                ->setUniform3f("AmbientMaterial", 0.04f, 0.04f, 0.04f);
-
-            // Draw data
-            glBindBuffer(GL_ARRAY_BUFFER, this->_simulator->getPositionsVBO());
-            this->_tesselationProgram->setAttribute(
-                "Position", 4, GL_FLOAT, GL_FALSE, 0, (void*) 0
-            );
-            glPatchParameteri(GL_PATCH_VERTICES, 3);
-            glDrawArrays(GL_PATCHES, 0, this->_simulator->getNumVertices());
-
+        switch (this->_renderMode) {
+            case RenderPoints:
+                this->_renderPoints(mvPtr, mvpPtr);
+                break;
+            case RenderMarching:
+                this->_renderMC(mnPtr, mvPtr, mvpPtr);
+                break;
+            case RenderNormals:
+                this->_renderMCNormals(mvpPtr);
+                break;
+            case RenderTesselation:
+                this->_renderMCTess(mnPtr, mvpPtr);
+                break;
+            case RenderTesselationTriangles:
+                this->_renderMCTessTriangles(mnPtr, mvpPtr);
+                break;
         }
 
-        glDisable(GL_POINT_SPRITE_ARB);
-        glDisable(GL_VERTEX_PROGRAM_POINT_SIZE);
+        if (this->_simulator->getRenderMode() == RenderMarching &&
+            this->_drawNormals
+        ) {
+            this->_renderMCNormals(mvpPtr);
+        }
+
         SDL_GL_SwapBuffers();
 
     }
@@ -470,12 +413,21 @@ namespace Particles {
         SDLKey key,
         Uint16 modifier
     ) {
+        float i, f;
+        int g, s, n;
+
         switch(key) {
             case SDLK_ESCAPE:
                 this->_stop();
                 break;
             case SDLK_r:
+                this->_run = !this->_run;
+                break;
+            case SDLK_e:
+                this->_intergrate = !this->_intergrate;
+            case SDLK_a:
                 this->_animate = !this->_animate;
+                this->_simulator->setAnimated(this->_animate);
                 break;
             case SDLK_c:
                 this->_simulator->generateParticles();
@@ -487,35 +439,86 @@ namespace Particles {
                     this->_dynamicColoring
                 );
                 break;
-            case SDLK_p:
+            case SDLK_n:
+                this->_drawNormals = !this->_drawNormals;
+                break;
+            case SDLK_i:
+                i = this->_simulator->getValue(Settings::Interpolation);
+                this->_simulator->setValue(Settings::Interpolation, !i);
+                this->_simulator->setRenderMode(
+                    this->_simulator->getRenderMode()
+                );
+                break;
+            case SDLK_g:
+                g = this->_simulator->getValue(Settings::ColorGradient) + 1;
+                this->_simulator->setValue(Settings::ColorGradient, g % 5);
+                break;
+            case SDLK_s:
+                s = this->_simulator->getValue(Settings::ColorSource) + 1;
+                this->_simulator->setValue(Settings::ColorSource, s % 2);
+                break;
+            case SDLK_F1:
                 this->_renderMode = RenderPoints;
                 this->_simulator->setRenderMode(this->_renderMode);
                 break;
-            case SDLK_m:
+            case SDLK_F2:
                 this->_renderMode = RenderMarching;
                 this->_simulator->setRenderMode(this->_renderMode);
                 break;
-            case SDLK_t:
+            case SDLK_F3:
+                this->_renderMode = RenderNormals;
+                this->_simulator->setRenderMode(RenderMarching);
+                break;
+            case SDLK_F4:
                 this->_renderMode = RenderTesselation;
+                this->_simulator->setRenderMode(RenderMarching);
+                break;
+            case SDLK_F5:
+                this->_renderMode = RenderTesselationTriangles;
                 this->_simulator->setRenderMode(RenderMarching);
                 break;
             case SDLK_w:
                 if (modifier & KMOD_LCTRL) {
-                    this->_tessLevelInner++;
+                    if (this->_tessLevel < 64) {
+                        this->_tessLevel++;
+                    }
                 } else {
-                    this->_tessLevelOuter++;
+                    if (this->_tessAlpha < 10)
+                    this->_tessAlpha += 0.1f;
                 }
                 break;
             case SDLK_q:
                 if (modifier & KMOD_LCTRL) {
-                    if (this->_tessLevelInner > 1) {
-                        this->_tessLevelInner--;
+                    if (this->_tessLevel > 1) {
+                        this->_tessLevel--;
                     }
                 } else {
-                    if(this->_tessLevelOuter > 1) {
-                        this->_tessLevelOuter--;
+                    if(this->_tessAlpha > 0) {
+                        this->_tessAlpha -= 0.1f;
                     }
                 }
+                break;
+            case SDLK_f:
+                f = this->_simulator->getValue(Settings::AnimPartForce);
+                if (modifier & KMOD_LCTRL && f > 0.0f) {
+                    f -= 0.25;
+                } else {
+                    f += 0.25;
+                }
+                this->_simulator->setValue(Settings::AnimPartForce, f);
+                break;
+            case SDLK_p:
+                n = this->_simulator->getValue(Settings::AnimPartNum);
+                if (modifier & KMOD_LCTRL && n > 1) {
+                    n--;
+                } else {
+                    n++;
+                }
+                this->_simulator->setValue(Settings::AnimPartNum, n);
+                break;
+            case SDLK_x:
+                i = this->_simulator->getValue(Settings::AnimChangeAxis);
+                this->_simulator->setValue(Settings::AnimChangeAxis, !i);
                 break;
             default:
                 break;
@@ -620,7 +623,6 @@ namespace Particles {
             min.x, min.y, min.z, 1.0f,
 
             // BACK
-
             min.x, min.y, max.z, 1.0f,
             max.x, min.y, max.z, 1.0f,
 
@@ -653,4 +655,148 @@ namespace Particles {
     }
     ////////////////////////////////////////////////////////////////////////////
 
+    void Renderer::_renderPoints(const GLfloat* mv, const GLfloat* mvp) {
+        glm::vec2 windowSize =
+            glm::vec2(this->_windowWidth, this->_windowHeight);
+
+        this->_shaderProgram->enable();
+
+        this->_shaderProgram
+            ->setUniformMatrix4fv("mv", 1, GL_FALSE, mv)
+            ->setUniformMatrix4fv("mvp", 1, GL_FALSE, mvp)
+            ->setUniform1f("pointRadius", 50.f)
+            ->setUniform1f("aspectRatio", this->_aspectRatio)
+            ->setUniform2fv("windowSize", 1, glm::value_ptr(windowSize))
+            ->setUniform1f(
+                "pointScale",
+                this->_windowWidth / tanf(45.0f*0.5f*(float)M_PI/180.0f)
+            );
+
+        //TODO create VAO for VBOs and attributes
+        // Draw data
+        glBindBuffer(GL_ARRAY_BUFFER, this->_simulator->getPositionsVBO());
+        this->_shaderProgram->setAttribute(
+            "position", 4, GL_FLOAT, GL_FALSE, 0, (void*) 0
+        );
+
+        glBindBuffer(GL_ARRAY_BUFFER, this->_simulator->getColorsVBO());
+        this->_shaderProgram->setAttribute(
+            "color", 4, GL_FLOAT, GL_FALSE, 0, (void*) 0
+        );
+
+        glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
+        glDrawArrays(GL_POINTS, 0, this->_numParticles);
+        glDisable(GL_VERTEX_PROGRAM_POINT_SIZE);
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+
+    void Renderer::_renderMC (
+        const GLfloat* mn,
+        const GLfloat* mv,
+        const GLfloat* mvp
+    ) {
+        this->_marchingProgram->enable();
+
+        this->_marchingProgram
+            ->setUniformMatrix4fv("mv", 1, GL_FALSE, mv)
+            ->setUniformMatrix4fv("mvp", 1, GL_FALSE, mvp)
+            ->setUniformMatrix3fv("mn", 1, GL_FALSE, mn)
+            ->setUniform3f("lightPosition", 0.0f, 2.0f, 0.0f);
+
+        // Draw data
+        glBindBuffer(GL_ARRAY_BUFFER, this->_simulator->getPositionsVBO());
+        this->_marchingProgram->setAttribute(
+            "position", 4, GL_FLOAT, GL_FALSE, 0, (void*) 0
+        );
+
+        glBindBuffer(GL_ARRAY_BUFFER, this->_simulator->getNormalsVBO());
+        this->_marchingProgram->setAttribute(
+            "normal", 4, GL_FLOAT, GL_FALSE, 0, (void*) 0
+        );
+
+        glDrawArrays(GL_TRIANGLES, 0, this->_simulator->getNumVertices());
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+
+    void Renderer::_renderMCNormals(const GLfloat* mvp) {
+        this->_normalsProgram->enable();
+
+        this->_normalsProgram->setUniformMatrix4fv("mvp", 1, GL_FALSE, mvp);
+
+        // Draw data
+        glBindBuffer(GL_ARRAY_BUFFER, this->_simulator->getPositionsVBO());
+        this->_marchingProgram->setAttribute(
+            "position", 4, GL_FLOAT, GL_FALSE, 0, (void*) 0
+        );
+
+        glBindBuffer(GL_ARRAY_BUFFER, this->_simulator->getNormalsVBO());
+        this->_marchingProgram->setAttribute(
+            "normal", 4, GL_FLOAT, GL_FALSE, 0, (void*) 0
+        );
+
+        glDrawArrays(GL_TRIANGLES, 0, this->_simulator->getNumVertices());
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+
+    void Renderer::_renderMCTess(const GLfloat* mn, const GLfloat* mvp) {
+        this->_tesselationProgram->enable();
+
+        this->_tesselationProgram
+            ->setUniform1f("tessLevel", this->_tessLevel)
+            ->setUniform1f("tessAlpha", this->_tessAlpha)
+            ->setUniformMatrix4fv("mvp", 1, GL_FALSE, mvp)
+            ->setUniformMatrix3fv("mn", 1, GL_FALSE, mn)
+            ->setUniform3f("lightPosition", 0.0f, 5.0f, 5.0f)
+            ->setUniform3f("diffuseMaterial", 0.09f, 0.31f, 0.98f)
+            ->setUniform3f("ambientMaterial", 0.04f, 0.04f, 0.04f);
+
+        // Draw data
+        glBindBuffer(GL_ARRAY_BUFFER, this->_simulator->getPositionsVBO());
+        this->_tesselationProgram->setAttribute(
+            "position", 4, GL_FLOAT, GL_FALSE, 0, (void*) 0
+        );
+
+        glBindBuffer(GL_ARRAY_BUFFER, this->_simulator->getNormalsVBO());
+        this->_tesselationProgram->setAttribute(
+            "normal", 4, GL_FLOAT, GL_FALSE, 0, (void*) 0
+        );
+
+        glPatchParameteri(GL_PATCH_VERTICES, 3);
+        glDrawArrays(GL_PATCHES, 0, this->_simulator->getNumVertices());
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+
+    void Renderer::_renderMCTessTriangles(const GLfloat* mn, const GLfloat* mvp) {
+        // Tesselation
+        this->_tesselationTrianglesProgram->enable();
+
+        this->_tesselationTrianglesProgram
+            ->setUniform1f("tessLevel", this->_tessLevel)
+            ->setUniform1f("tessAlpha", this->_tessAlpha)
+            ->setUniformMatrix4fv("mvp", 1, GL_FALSE, mvp)
+            ->setUniformMatrix3fv("mn", 1, GL_FALSE, mn)
+            ->setUniform3f("lightPosition", 0.0f, 5.0f, 5.0f)
+            ->setUniform3f("diffuseMaterial", 0.09f, 0.31f, 0.98f)
+            ->setUniform3f("ambientMaterial", 0.04f, 0.04f, 0.04f);
+
+        // Draw data
+        glBindBuffer(GL_ARRAY_BUFFER, this->_simulator->getPositionsVBO());
+        this->_tesselationTrianglesProgram->setAttribute(
+            "position", 4, GL_FLOAT, GL_FALSE, 0, (void*) 0
+        );
+
+        glBindBuffer(GL_ARRAY_BUFFER, this->_simulator->getNormalsVBO());
+        this->_tesselationTrianglesProgram->setAttribute(
+            "normal", 4, GL_FLOAT, GL_FALSE, 0, (void*) 0
+        );
+
+        glPatchParameteri(GL_PATCH_VERTICES, 3);
+        glDrawArrays(GL_PATCHES, 0, this->_simulator->getNumVertices());
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
 }

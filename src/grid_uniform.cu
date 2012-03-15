@@ -139,26 +139,6 @@ namespace Grid {
         Kernel::hash<<<numBlocks, numThreads>>>(
             this->_numParticles, positions, this->_data
         );
-
-        /*Buffer::Memory<uint>* buffer =
-            new Buffer::Memory<uint>(new Buffer::Allocator(), Buffer::Host);
-
-        buffer->allocate(this->_numParticles);
-
-
-        cudaMemcpy(
-            buffer->get(),
-            this->_data.hash,
-            this->_numParticles * sizeof(uint),
-            cudaMemcpyDeviceToHost
-        );
-        uint* hash = buffer->get();
-        cutilSafeCall(cutilDeviceSynchronize());
-
-        for (uint i=0;i<this->_numParticles; i++) {
-            std::cout << " hash: " << hash[i] << std::endl;
-        }*/
-
     }
 
     ////////////////////////////////////////////////////////////////////////////

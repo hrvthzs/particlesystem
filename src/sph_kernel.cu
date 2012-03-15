@@ -27,7 +27,9 @@ namespace SPH {
             float3 gravity,
             D data,
             D sortedData,
-            GridData gridData
+            GridData gridData,
+            Colors::Gradient gradient,
+            Colors::Source source
         ) {
             int index = __umul24(blockIdx.x, blockDim.x) + threadIdx.x;
             if (index >= numParticles) {
@@ -39,7 +41,6 @@ namespace SPH {
             float3 veleval = make_float3(sortedData.veleval[index]);
 
             float3 force = make_float3(sortedData.force[index]);
-            float pressure = sortedData.pressure[index];
 
             float3 externalForce = gravity;
 
@@ -94,10 +95,9 @@ namespace SPH {
                 //float3 color = (position - cudaGridParams.min) / cudaGridParams.size;
                 float3 color =
                     Colors::calculateColor(
-                        Colors::HSVBlueToRed,
-                        Colors::Velocity,
+                        gradient,
+                        source,
                         vnext,
-                        pressure,
                         force
                     );
                 data.color[sortedIndex] = make_float4(color, 1.0f);
@@ -198,6 +198,45 @@ namespace SPH {
             iterateNeighbourCells<Neighbours<Force, Force::Data>, Force::Data>(
                 index, position, data, gridData
             );
+        }
+
+        ////////////////////////////////////////////////////////////////////////
+
+        template<class D>
+        __global__ void animate(
+            uint numParticles,
+            uint lastParticle,
+            uint force,
+            bool changeAxis,
+            D data,
+            GridData gridData
+        ) {
+            uint index = __umul24(blockIdx.x, blockDim.x) + threadIdx.x;
+            if (index >= (numParticles - lastParticle)) {
+                return;
+            }
+
+            index += lastParticle;
+
+            float x =
+                cudaGridParams.cellSize.x *
+                (threadIdx.x + lastParticle % blockDim.x) -
+                cudaGridParams.cellSize.z * blockDim.x / 2;
+            float y =
+                cudaGridParams.cellSize.z * blockIdx.x -
+                cudaGridParams.cellSize.z * blockDim.x / 2;
+            float z = cudaGridParams.min.y + cudaGridParams.cellSize.y;
+
+            if (changeAxis) {
+                data.position[index] = make_float4(x, z, y, 1);
+                data.velocity[index] = make_float4(0.0, force, 0.0, 0.0);
+            } else {
+                data.position[index] = make_float4(x, y, z, 1);
+                data.velocity[index] = make_float4(0.0, 0.0, force, 0.0);
+            }
+
+
+
         }
 
         ////////////////////////////////////////////////////////////////////////

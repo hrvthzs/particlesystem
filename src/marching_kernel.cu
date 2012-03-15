@@ -41,9 +41,7 @@ namespace Marching {
 
         ////////////////////////////////////////////////////////////////////////
 
-        __device__ int3 computeVoxelPosition(
-            uint &index
-        ) {
+        inline __device__ int3 computeVoxelPosition(uint &index) {
 
             float px = cudaGridParams.resolution.x + GRID_OFFSET;
             float pxy = px * (cudaGridParams.resolution.y + GRID_OFFSET);
@@ -62,8 +60,23 @@ namespace Marching {
 
         ////////////////////////////////////////////////////////////////////////
 
+        inline __device__ uint computeIndex(int3 &cell) {
+
+            // TODO optimize this expression
+            float px = cudaGridParams.resolution.x + GRID_OFFSET;
+            float pxy = px * (cudaGridParams.resolution.y + GRID_OFFSET);
+
+            return (cell.x + 1) + (cell.y + 1) * px + (cell.z + 1) * pxy;
+        }
+        ////////////////////////////////////////////////////////////////////////
+
         // compute interpolated vertex along an edge
-        __device__ float3 vertexInterolation(float3 p0, float3 p1, float f0, float f1) {
+        __device__ float3 vertexInterolation(
+            float3 p0,
+            float3 p1,
+            float f0,
+            float f1
+        ) {
             p0 = ((p0 + 0.5f) * cudaGridParams.cellSize + cudaGridParams.min);
             p1 = ((p1 + 0.5f) * cudaGridParams.cellSize + cudaGridParams.min);
             float t = (0.5f - f0) / (f1 - f0);
@@ -78,7 +91,7 @@ namespace Marching {
             float3 edge1 = *v2 - *v0;
             // note - it's faster to perform normalization in vertex shader
             // rather than here
-            return cross(edge0, edge1);
+            return cross(edge1, edge0);
         }
 
         ////////////////////////////////////////////////////////////////////////
@@ -109,10 +122,10 @@ namespace Marching {
             float field[8];
             field[0] = sampleVolume(cell, gridData);
             field[1] = sampleVolume(cell + make_int3(1,0,0), gridData);
-            field[2] = sampleVolume(cell + make_int3(1,1,0), gridData);
-            field[3] = sampleVolume(cell + make_int3(0,1,0), gridData);
-            field[4] = sampleVolume(cell + make_int3(0,0,1), gridData);
-            field[5] = sampleVolume(cell + make_int3(1,0,1), gridData);
+            field[2] = sampleVolume(cell + make_int3(1,0,1), gridData);
+            field[3] = sampleVolume(cell + make_int3(0,0,1), gridData);
+            field[4] = sampleVolume(cell + make_int3(0,1,0), gridData);
+            field[5] = sampleVolume(cell + make_int3(1,1,0), gridData);
             field[6] = sampleVolume(cell + make_int3(1,1,1), gridData);
             field[7] = sampleVolume(cell + make_int3(0,1,1), gridData);
 
@@ -132,6 +145,7 @@ namespace Marching {
 
             voxelData.vertices[hash] = numVertices;
             voxelData.occupied[hash] = (numVertices > 0);
+            voxelData.cubeIndex[hash] = cubeIndex;
 
         }
 
@@ -152,8 +166,16 @@ namespace Marching {
             // if cell is occupied then get index to compact array
             // from sorted occupiedScan
             // and put hash of cell to compact array
+            //
+            // Example:
+            // H  = [0,1,2,3,4,5] --> hash codes
+            // O  = [1,0,1,1,0,1] --> occupied flag
+            // OS = [0,1,1,2,3,3] --> occupied scan
+            // C  = [0,2,3,5,X,X] --> compacted array
+            //
             if (data.occupied[hash]) {
-                data.compact[data.occupiedScan[hash]] = hash;
+                uint index = data.occupiedScan[hash];
+                data.compact[index] = hash;
             }
         }
 
@@ -175,7 +197,6 @@ namespace Marching {
                     blockIdx.x + __mul24(blockIdx.y, gridDim.x)
                 );
 
-
             if (index > activeVoxels - 1) {
                 index = activeVoxels - 1;
             }
@@ -193,37 +214,24 @@ namespace Marching {
             float3 v[8];
             v[0] = p;
             v[1] = p + make_float3(1, 0, 0);
-            v[2] = p + make_float3(1, 1, 0);
-            v[3] = p + make_float3(0, 1, 0);
-            v[4] = p + make_float3(0, 0, 1);
-            v[5] = p + make_float3(1, 0, 1);
+            v[2] = p + make_float3(1, 0, 1);
+            v[3] = p + make_float3(0, 0, 1);
+            v[4] = p + make_float3(0, 1, 0);
+            v[5] = p + make_float3(1, 1, 0);
             v[6] = p + make_float3(1, 1, 1);
             v[7] = p + make_float3(0, 1, 1);
 
             float field[8];
             field[0] = sampleVolume(cell, gridData);
             field[1] = sampleVolume(cell + make_int3(1,0,0), gridData);
-            field[2] = sampleVolume(cell + make_int3(1,1,0), gridData);
-            field[3] = sampleVolume(cell + make_int3(0,1,0), gridData);
-            field[4] = sampleVolume(cell + make_int3(0,0,1), gridData);
-            field[5] = sampleVolume(cell + make_int3(1,0,1), gridData);
+            field[2] = sampleVolume(cell + make_int3(1,0,1), gridData);
+            field[3] = sampleVolume(cell + make_int3(0,0,1), gridData);
+            field[4] = sampleVolume(cell + make_int3(0,1,0), gridData);
+            field[5] = sampleVolume(cell + make_int3(1,1,0), gridData);
             field[6] = sampleVolume(cell + make_int3(1,1,1), gridData);
             field[7] = sampleVolume(cell + make_int3(0,1,1), gridData);
 
-            float isoValue = 0.5f;
-
-            uint cubeIndex = 0;
-            cubeIndex  = uint(field[0] < isoValue);
-            cubeIndex += uint(field[1] < isoValue) * 2;
-            cubeIndex += uint(field[2] < isoValue) * 4;
-            cubeIndex += uint(field[3] < isoValue) * 8;
-            cubeIndex += uint(field[4] < isoValue) * 16;
-            cubeIndex += uint(field[5] < isoValue) * 32;
-            cubeIndex += uint(field[6] < isoValue) * 64;
-            cubeIndex += uint(field[7] < isoValue) * 128;
-
-            //vertexData.positions[index].x = field[1] / (field[0] + field[1]);
-            //return;
+            uint cubeIndex = voxelData.cubeIndex[voxel];
 
             // use shared memory to avoid using local
             __shared__ float3 vertlist[12*NTHREADS];
@@ -285,6 +293,120 @@ namespace Marching {
                     vertexData.positions[index+2] = make_float4(*v[2], 1.0f);
                     vertexData.normals[index+2] = make_float4(n, 0.0f);
                 }
+            }
+
+        }
+
+        ////////////////////////////////////////////////////////////////////////
+
+        inline __device__ float4 getNormal(
+            int3 cell,
+            Marching::VertexData &vertexData,
+            Marching::VoxelData &voxelData,
+            Marching::TableData &tableData,
+            uint edge
+        ) {
+            uint voxel = computeIndex(cell);
+            uint cubeIndex = voxelData.cubeIndex[voxel];
+            float4 normal = make_float4(0.0f);
+
+            for(int i=0; i<tableData.numVertices[cubeIndex]; i++) {
+                if (tableData.triangles[cubeIndex * 16 + i] == edge) {
+                    uint ind = voxelData.verticesScan[voxel] + i;
+                    normal += vertexData.normals[ind];
+                }
+            }
+
+            return normal;
+        }
+
+        ////////////////////////////////////////////////////////////////////////
+
+        inline __device__ void setNormal(
+            int3 cell,
+            Marching::VertexData vertexData,
+            Marching::VoxelData voxelData,
+            Marching::TableData tableData,
+            uint edge,
+            float4 normal
+        ) {
+            uint voxel = computeIndex(cell);
+            uint cubeIndex = voxelData.cubeIndex[voxel];
+
+            for(int i=0; i<16; i++) {
+                if (tableData.triangles[cubeIndex * 16 + i] == edge) {
+                    uint ind = voxelData.verticesScan[voxel] + i;
+                    vertexData.normals[ind] = normal;
+                }
+            }
+        }
+
+        ////////////////////////////////////////////////////////////////////////
+
+        __global__ void interpolateNormals(
+            Marching::VertexData vertexData,
+            Marching::VoxelData voxelData,
+            Marching::TableData tableData,
+            GridData gridData,
+            uint maxVertices,
+            uint activeVoxels,
+            float3 cellSize
+        ) {
+            int index =
+                threadIdx.x +
+                __mul24(
+                    blockDim.x,
+                    blockIdx.x + __mul24(blockIdx.y, gridDim.x)
+                );
+
+
+            if (index > activeVoxels - 1) {
+                index = activeVoxels - 1;
+            }
+
+
+            uint voxel = voxelData.compact[index];
+            int3 cell = computeVoxelPosition(voxel);
+            uint cubeIndex = voxelData.cubeIndex[voxel];
+
+            float4 normals[12];
+            bool usedEdges[12];
+
+            for(int i=0; i<12; i++) {
+                normals[i] = make_float4(0.0f);
+                usedEdges[i] = false;
+            }
+
+            for(int i=0; i<tableData.numVertices[cubeIndex]; i++) {
+                uint edge = tableData.triangles[cubeIndex * 16 + i];
+                uint ind = voxelData.verticesScan[voxel] + i;
+                normals[edge] += vertexData.normals[ind];
+                usedEdges[edge] = true;
+            }
+
+            for (int i=0; i<12; i++) {
+                if (!usedEdges[i]) {
+                    continue;
+                }
+
+                for (int j=0; j<3; j++) {
+                    uint edge = tableData.adjacentEdges[i*3 + j];
+                    int3 adjCell = cell + tableData.adjacentEdgesPos[i*3 + j];
+                    normals[i] +=
+                    getNormal(
+                        adjCell,
+                        vertexData,
+                        voxelData,
+                        tableData,
+                        edge
+                    );
+                }
+            }
+
+            for(int i=0; i<tableData.numVertices[cubeIndex]; i++) {
+                uint edge = tableData.triangles[cubeIndex * 16 + i];
+                uint ind = voxelData.verticesScan[voxel] + i;
+                vertexData.inormals[ind] = normals[edge];
             }
 
         }

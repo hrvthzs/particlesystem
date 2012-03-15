@@ -5,6 +5,7 @@
 #include <cutil_math.h>
 #include "buffer_manager.cuh"
 #include "buffer_vertex.h"
+#include "colors.cuh"
 #include "grid_uniform.cuh"
 #include "marching_renderer.cuh"
 #include "particles.h"
@@ -52,11 +53,12 @@ namespace SPH {
             /**
              * Update simulator (integrate)
              *
+             * @param animate - run animation, if false only rendering works
              * @param x - gravity x coord
              * @param y - gravity y coord
              * @param z - gravity z coord
              */
-            void update(float x, float y, float z);
+            void update(bool animate, float x, float y, float z);
 
             /**
              * Get positions array (GPU) pointer
@@ -103,6 +105,11 @@ namespace SPH {
             void setRenderMode(int mode);
 
             /**
+             * Get rendering method
+             */
+            int getRenderMode();
+
+            /**
              * Get min and max positions of grid
              */
             Particles::GridMinMax getGridMinMax();
@@ -128,6 +135,16 @@ namespace SPH {
             cudaEvent_t _stopFPS;
             uint _iterFPS;
             uint _sumTimeFPS;
+
+            uint _lastAnimatedParticle;
+            uint _numAnimatedParticles;
+
+            float _animationForce;
+
+            bool _animChangeAxis;
+
+            Colors::Gradient _colorGradient;
+            Colors::Source _colorSource;
 
         private:
             /**
@@ -163,6 +180,11 @@ namespace SPH {
              * Calculate force vectors (pressure and viscosity)
              */
             void _step2();
+
+            /**
+             * Run animation
+             */
+            void _animate();
 
     };
 
